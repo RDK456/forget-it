@@ -22,6 +22,7 @@ data class Detected(
     val items: List<ScannedItem> = emptyList(),
     val tenureMonths: Int? = null,
     val ratePercent: BigDecimal? = null,
+    val principalMinor: Long? = null,
 )
 
 /** Decides which tracker a piece of recognised text belongs to. Pure text logic, so it is unit tested without a phone. */
@@ -116,7 +117,7 @@ object DocScan {
         return lines.flatMap(::datesIn).firstOrNull()
     }
 
-    private fun billType(text: String): BillType = when {
+    fun billTypeOf(text: String): BillType = when {
         Regex("""credit card|card statement|minimum due""", IC).containsMatchIn(text) -> BillType.CREDIT_CARD
         Regex("""electric|kwh|power""", IC).containsMatchIn(text) -> BillType.ELECTRICITY
         Regex("""\bwater\b""", IC).containsMatchIn(text) -> BillType.WATER
@@ -182,7 +183,7 @@ object DocScan {
                 category = preset?.category ?: "Other",
             )
             bill >= 1 -> {
-                val type = billType(text)
+                val type = billTypeOf(text)
                 Detected(DocKind.BILL, headerName(lines) ?: "Bill", amount?.minor, cur, findDate(lines), cycleOf(text), billType = type)
             }
             groceries.size >= 2 -> Detected(DocKind.GROCERY, "Groceries", amount?.minor, cur, items = groceries)

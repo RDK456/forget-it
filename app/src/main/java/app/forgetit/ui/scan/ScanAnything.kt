@@ -5,7 +5,18 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import app.forgetit.ui.AppIcons
+import app.forgetit.ui.theme.Brushes
+import app.forgetit.ui.theme.TrackerBrush
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,6 +84,7 @@ private data class Entry(
     val unit: String = "pcs",
     val tenure: String = "",
     val rate: String = "",
+    val principal: String = "",
     val selected: Boolean = true,
 )
 
@@ -87,7 +99,7 @@ private fun Detected.toEntries(): List<Entry> =
     } else listOf(
         Entry(
             kind, currency, name, plain(amountMinor, currency), date?.toString().orEmpty(), cycle, category, billType,
-            tenure = tenureMonths?.toString().orEmpty(), rate = ratePercent?.toPlainString().orEmpty(),
+            tenure = tenureMonths?.toString().orEmpty(), rate = ratePercent?.toPlainString().orEmpty(), principal = plain(principalMinor, currency),
         ),
     )
 
@@ -114,6 +126,7 @@ private fun List<Entry>.toDetected(): List<Detected> {
             e.kind, e.name.trim(), e.amountMinor(), e.currency, parseDate(e.date), e.cycle,
             if (e.category in CATEGORIES) e.category else "Other", e.billType,
             tenureMonths = e.tenure.trim().toIntOrNull(), ratePercent = e.rate.replace(',', '.').trim().toBigDecimalOrNull(),
+            principalMinor = e.principal.replace(',', '.').trim().takeIf { it.isNotEmpty() }?.let { Money.parseMinor(it, e.currency) },
         )
     }
     return others + if (groceries.isNotEmpty()) listOf(Detected(DocKind.GROCERY, "Groceries", null, first().currency, items = groceries)) else emptyList()
@@ -121,12 +134,13 @@ private fun List<Entry>.toDetected(): List<Detected> {
 
 /** Any photo or screenshot: read on the phone, sorted into subscription, EMI, bill, groceries or a payment note, then reviewed before saving. */
 @Composable
-fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, onDismiss: () -> Unit) {
+fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, preloaded: List<Detected>? = null, note: String? = null, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val entries = remember { mutableStateListOf<Entry>() }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var info by remember { mutableStateOf(note) }
     var cameraFile by remember { mutableStateOf<File?>(null) }
 
     fun scan(uri: Uri) = scope.launch {
@@ -144,6 +158,21 @@ fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, onDis
     }
 
     LaunchedEffect(initial) { initial?.let { scan(it) } }
+    LaunchedEffect(preloaded) { preloaded?.forEach { entries += it.toEntries() } }
+    val sheetPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            busy = true
+            message = null
+            try {
+                val r = vm.loadSheet(uri)
+                r.items.forEach { entries += it.toEntries() }
+                info = vm.sheetSummary(r)
+            } catch (e: Exception) {
+                message = e.message ?: "Could not read that file"
+            }
+            busy = false
+        }
+    }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) scan(uri) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val f = cameraFile
@@ -166,6 +195,29 @@ fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, onDis
                     }, enabled = !busy) { Text(if (entries.isEmpty()) "Take photo" else "Add another") }
                     OutlinedButton({ picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy) { Text("Photo or screenshot") }
                 }
+                OutlinedButton(
+                    { sheetPicker.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv", "text/comma-separated-values", "application/vnd.ms-excel", "application/octet-stream", "text/plain")) },
+                    Modifier.fillMaxWidth(), enabled = !busy,
+                ) {
+                    Icon(AppIcons.Sheet, null, Modifier.size(18.dp))
+                    Text("  Excel or CSV spreadsheet")
+                }
+                if (entries.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DocKind.entries.forEach { k ->
+                        val n = entries.count { it.kind == k && it.selected }
+                        if (n > 0) {
+                            val (icon, brush) = kindStyle(k)
+                            Row(
+                                Modifier.clip(RoundedCornerShape(50)).background(brush.from.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(icon, null, Modifier.size(14.dp), tint = brush.from)
+                                Text(" $n", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+                info?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 if (busy) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CircularProgressIndicator(Modifier.padding(4.dp))
                     Text("Reading...")
@@ -195,6 +247,7 @@ private fun EntryCard(e: Entry, onChange: (Entry) -> Unit) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(e.selected, { onChange(e.copy(selected = it)) })
+                KindBadge(e.kind)
                 Dropdown("This is a", e.kind, DocKind.entries, { it.label }) { onChange(e.copy(kind = it)) }
             }
             OutlinedTextField(e.name, { onChange(e.copy(name = it)) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Name") })
@@ -226,6 +279,7 @@ private fun EntryCard(e: Entry, onChange: (Entry) -> Unit) {
                         OutlinedTextField(e.tenure, { onChange(e.copy(tenure = it)) }, Modifier.weight(1f), singleLine = true, label = { Text("Months (optional)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                         OutlinedTextField(e.rate, { onChange(e.copy(rate = it)) }, Modifier.weight(1f), singleLine = true, label = { Text("Rate % (optional)") }, keyboardOptions = money)
                     }
+                    OutlinedTextField(e.principal, { onChange(e.copy(principal = it)) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Loan amount (optional)") }, keyboardOptions = money)
                     Text("Missing loan terms are estimated from the EMI. Open the loan later to correct them.", style = MaterialTheme.typography.bodySmall)
                 }
                 DocKind.GROCERY -> {
@@ -239,4 +293,22 @@ private fun EntryCard(e: Entry, onChange: (Entry) -> Unit) {
             }
         }
     }
+}
+
+private fun kindStyle(k: DocKind): Pair<ImageVector, TrackerBrush> = when (k) {
+    DocKind.SUBSCRIPTION -> AppIcons.Subscriptions to Brushes.subscription
+    DocKind.EMI -> AppIcons.Loans to Brushes.loan
+    DocKind.BILL -> AppIcons.Bills to Brushes.bill
+    DocKind.GROCERY -> AppIcons.Stock to Brushes.stock
+    DocKind.PAYMENT -> AppIcons.Transactions to Brushes.berry
+}
+
+/** The tracker's colour and icon, so a list of mixed records stays easy to read at a glance. */
+@Composable
+private fun KindBadge(kind: DocKind) {
+    val (icon, brush) = kindStyle(kind)
+    Box(
+        Modifier.padding(horizontal = 6.dp).size(40.dp).clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(listOf(brush.from, brush.to))),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, null, Modifier.size(22.dp), tint = brush.on) }
 }

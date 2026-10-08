@@ -117,6 +117,7 @@ fun BackupSection(vm: MainViewModel) {
     CsvRow("Loans and EMIs", "forgetit-loans.csv", { message = it }, vm::exportLoans, vm::importLoans)
     CsvRow("Household stock", "forgetit-stock.csv", { message = it }, vm::exportStock, vm::importStock)
     CsvRow("Bills and utilities", "forgetit-bills.csv", { message = it }, vm::exportBills, vm::importBills)
+    ExcelRow(vm) { message = it }
     FullBackupRow(vm) { message = it }
     message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 }
@@ -142,4 +143,36 @@ private fun FullBackupRow(vm: MainViewModel, onMessage: (String) -> Unit) {
         "Restore from a backup?", "Everything on this phone is replaced by the backup, including photos.", "Choose file",
         { confirm = false; import.launch(arrayOf("application/zip", "application/octet-stream")) }, { confirm = false },
     )
+}
+
+private const val XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+@Composable
+private fun ExcelRow(vm: MainViewModel, onMessage: (String) -> Unit) {
+    val exportAll = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument(XLSX)) { uri ->
+        if (uri != null) vm.exportExcel(uri, false, onMessage)
+    }
+    val exportTemplate = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument(XLSX)) { uri ->
+        if (uri != null) vm.exportExcel(uri, true, onMessage)
+    }
+    val import = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importSheet(uri, onMessage)
+    }
+    androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.Icon(app.forgetit.ui.AppIcons.Sheet, null, tint = app.forgetit.ui.theme.Brushes.subscription.from)
+            Text("Excel spreadsheet", style = MaterialTheme.typography.titleSmall)
+        }
+        Text(
+            "Export everything as an Excel file with one sheet per tracker, or fill in the template and import it. Excel (.xlsx) and CSV files are read, sorted into the right tracker, and shown for review before anything is added.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.Button({ exportAll.launch("forgetit.xlsx") }) { Text("Export to Excel") }
+            androidx.compose.material3.OutlinedButton({ exportTemplate.launch("forgetit-template.xlsx") }) { Text("Template") }
+        }
+        androidx.compose.material3.OutlinedButton({ import.launch(arrayOf(XLSX, "text/csv", "text/comma-separated-values", "application/vnd.ms-excel", "application/octet-stream", "text/plain")) }, Modifier.fillMaxWidth()) {
+            Text("Import Excel or CSV")
+        }
+    }
 }

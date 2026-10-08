@@ -229,7 +229,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
                     val n = d.tenureMonths ?: 12
                     val rate = d.ratePercent ?: java.math.BigDecimal.ZERO
                     val monthly = rate.toDouble() / 1200
-                    val principal = if (monthly == 0.0) emi * n else (Math.floor(emi * (1 - Math.pow(1 + monthly, -n.toDouble())) / monthly) - n).toLong().coerceAtLeast(emi) // rounded down so the last installment is never an extra sliver
+                    val principal = d.principalMinor ?: if (monthly == 0.0) emi * n else (Math.floor(emi * (1 - Math.pow(1 + monthly, -n.toDouble())) / monthly) - n).toLong().coerceAtLeast(emi) // rounded down so the last installment is never an extra sliver
                     val loan = app.forgetit.domain.Loan(
                         name = d.name, lender = d.name, principalMinor = principal, currency = d.currency, annualRatePercent = rate, tenureMonths = n,
                         firstEmiDate = d.date ?: today.plusMonths(1), emiOverrideMinor = emi, notes = "Added from a photo. Check the terms.",
@@ -287,6 +287,37 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         }
         app.forgetit.txn.AutoScan.markMatchedEmis(c)
         c.reminders.sync()
+    }
+    /** Reads an .xlsx or .csv file into records for review. Throws with a message the user can read. */
+    suspend fun loadSheet(uri: android.net.Uri): app.forgetit.domain.SheetImportResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val bytes = c.context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw IllegalArgumentException("Could not open that file")
+        val name = c.context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { if (it.moveToFirst()) it.getString(0) else null } ?: "Sheet"
+        app.forgetit.domain.SheetImport.fromBytes(bytes, name, settings.value.defaultCurrency, java.time.LocalDate.now(c.clock))
+    }
+
+    fun sheetSummary(r: app.forgetit.domain.SheetImportResult) =
+        "Read ${r.rows} row(s), found ${r.items.sumOf { if (it.kind == app.forgetit.domain.DocKind.GROCERY) it.items.size else 1 }} record(s)." +
+            if (r.skipped.isEmpty()) "" else "\nSkipped:\n" + r.skipped.joinToString("\n")
+
+    /** Settings entry: pick a spreadsheet, then the review screen opens with everything it found. */
+    fun importSheet(uri: android.net.Uri, onError: (String) -> Unit) = viewModelScope.launch {
+        try {
+            val r = loadSheet(uri)
+            if (r.items.isEmpty()) onError("Nothing to import. " + sheetSummary(r))
+            else c.scan.value = app.forgetit.grocery.ScanRequest(null, r.items, sheetSummary(r))
+        } catch (e: Exception) { onError(e.message ?: "Could not read that file") }
+    }
+
+    fun exportExcel(uri: android.net.Uri, template: Boolean, onDone: (String) -> Unit) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val msg = try {
+            val sheets = app.forgetit.domain.SheetExport.workbook(
+                c.subscriptions.getAll(), c.loans.getLoans(), c.bills.getBills(), c.bills.getEntries(), c.stock.getItems(), c.stock.getBatches(),
+                java.time.LocalDate.now(c.clock), template,
+            )
+            c.context.contentResolver.openOutputStream(uri)?.use { it.write(app.forgetit.domain.Xlsx.write(sheets)) } ?: error("no stream")
+            if (template) "Template saved. Fill it in and import it." else "Excel file saved with one sheet per tracker."
+        } catch (e: Exception) { "Could not save the Excel file" }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { onDone(msg) }
     }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }

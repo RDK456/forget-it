@@ -15,7 +15,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-data class ScanRequest(val uri: Uri? = null)
+data class ScanRequest(val uri: Uri? = null, val preloaded: List<app.forgetit.domain.Detected>? = null, val note: String? = null)
 
 data class ScanRead(val text: String, val labels: List<ScannedItem>)
 

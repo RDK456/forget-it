@@ -216,3 +216,12 @@ Optional. `BiometricPrompt` with device-credential fallback. Locks on cold start
 - **Stock:** pack size, delivery lead time, brand and usual store per item; price paid per restock with price history and trend; one-tap **Used one** and **Finished**; categories Medicines, Gas and water, Pet added. The shopping list rounds up to whole packs, is grouped by store, shows a buy-by date that allows for the lead time, and each line has a **Bought** button that restocks it.
 - **Auto-scan batch:** first-run prompt, auto-scan switch, daily inbox catch-up (WorkManager), live SMS, and email via a NotificationListenerService that reads new-mail notifications from Gmail, Outlook and similar apps (on device, no internet). Merchant names are normalised to presets. Subscription price changes are detected from charges and offered as Update. EMIs are auto-marked paid from a matching debit (switchable). Prepayment what-if preview in the Prepay dialog. Credit card bill type, monthly budget on Overview, pay-now links on loans and bills (database v6).
 - **Still not built:** per-sender SMS templates, seasonal adjustments, barcode or voice entry (barcode needs an ML dependency), shared household (needs a network), database encryption at rest (needs SQLCipher), zip backup with photos (photo links do not survive a CSV re-import because record ids change), Gmail API reading of full email bodies (needs INTERNET and OAuth).
+
+## 19. Scanning, spreadsheets and backup (added after beta)
+
+- **Auto-scan**: first-run prompt, live SMS, daily inbox catch-up, email via notification listener, optional Gmail read-only sync. Per-sender mute. Merchant names normalised to presets. Price-change detection, auto-marked EMIs.
+- **Scan anything**: ML Kit text recognition and image labeling run on the device. DocScan classifies the text into subscription, EMI, bill, groceries or payment note; the review screen lets the user change the type and every field. Image share target.
+- **Spreadsheets**: Xlsx reader and writer without a library, SheetImport matches columns by header aliases, SheetExport writes one sheet per tracker plus a how-to sheet and a template.
+- **Full backup**: zip of the SQLite file and photos, restore validates the SQLite header and schema version, then restarts.
+- **Network**: INTERNET permission exists only for the Gmail API.
+- **Not built**: barcode scanning (needs a camera preview and a product database), database encryption at rest (migration risk without instrumented tests), shared household (needs a server).

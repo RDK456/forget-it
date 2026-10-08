@@ -48,7 +48,7 @@ object GroceryScan {
         }
     }
 
-    private fun defaultUnit(name: String): String {
+    fun defaultUnit(name: String): String {
         val n = name.lowercase(Locale.ROOT)
         fun has(words: List<String>) = words.any { Regex("""\b${Regex.escape(it)}s?\b""").containsMatchIn(n) }
         return when {

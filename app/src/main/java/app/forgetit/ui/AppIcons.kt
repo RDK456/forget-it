@@ -5,6 +5,7 @@ import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Bell
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Camera
+import com.composables.icons.lucide.FileSpreadsheet
 import com.composables.icons.lucide.Mic
 import com.composables.icons.lucide.ChartPie
 import com.composables.icons.lucide.Check
@@ -44,6 +45,7 @@ object AppIcons {
     val Previous: ImageVector get() = Lucide.ChevronLeft
     val Next: ImageVector get() = Lucide.ChevronRight
     val Camera: ImageVector get() = Lucide.Camera
+    val Sheet: ImageVector get() = Lucide.FileSpreadsheet
     val Mic: ImageVector get() = Lucide.Mic
     val Gallery: ImageVector get() = Lucide.Image
     val Close: ImageVector get() = Lucide.X
