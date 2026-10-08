@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.BudgetLevel
+import app.forgetit.domain.CategoryBreakdown
 import app.forgetit.domain.CategorySpend
 import app.forgetit.domain.Money
 import app.forgetit.domain.SpendStats
@@ -94,6 +95,7 @@ fun MoneyScreen(vm: MainViewModel, today: LocalDate, openAdd: Boolean, onOpenDet
     var adding by rememberSaveable { mutableStateOf(openAdd) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var limitFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var detailCategory by rememberSaveable { mutableStateOf<String?>(null) }
     var visible by rememberSaveable { mutableIntStateOf(PAGE) }
     val addRequest by vm.addTxnRequest.collectAsStateWithLifecycle()
     LaunchedEffect(addRequest) { if (addRequest) { adding = true; vm.addTxnRequest.value = false } }
@@ -134,7 +136,7 @@ fun MoneyScreen(vm: MainViewModel, today: LocalDate, openAdd: Boolean, onOpenDet
             summary.top?.let { top ->
                 item("top") {
                     val tint = txnCategoryColor(top.category)
-                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = tint.copy(alpha = 0.12f))) {
+                    Card(Modifier.fillMaxWidth().pressScale { detailCategory = top.category }, colors = CardDefaults.cardColors(containerColor = tint.copy(alpha = 0.12f))) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             CategoryTile(top.category, 52.dp)
                             Spacer(Modifier.width(14.dp))
@@ -149,13 +151,14 @@ fun MoneyScreen(vm: MainViewModel, today: LocalDate, openAdd: Boolean, onOpenDet
                 }
             }
             item("catTitle") { Text("Where it went", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
+            if (rows.isNotEmpty()) item("catHint") { Text("Tap a category to see where, when and how much.", style = MaterialTheme.typography.bodySmall) }
             if (rows.isEmpty()) item("catEmpty") {
                 EmptyState(AppIcons.Wallet, "Nothing spent yet", "Add what you spend with the plus button, or let Forget-it find payments in your messages.")
             } else items(rows, key = { "c${it.category}" }) { c ->
                 val limit = budgets[c.category]
                 val level = limit?.let { SpendStats.level(c.minor, it) } ?: BudgetLevel.OK
                 val levelColor = when (level) { BudgetLevel.OK -> MaterialTheme.colorScheme.onSurfaceVariant; BudgetLevel.WARN -> AMBER; BudgetLevel.OVER -> MaterialTheme.colorScheme.error }
-                Column(Modifier.fillMaxWidth().pressScale { catFilter = if (catFilter == c.category) null else c.category }.padding(vertical = 6.dp)) {
+                Column(Modifier.fillMaxWidth().pressScale { detailCategory = c.category }.padding(vertical = 6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CategoryTile(c.category, 40.dp)
                         Spacer(Modifier.width(12.dp))
@@ -230,6 +233,13 @@ fun MoneyScreen(vm: MainViewModel, today: LocalDate, openAdd: Boolean, onOpenDet
         }
     }
 
+    detailCategory?.let { cat ->
+        CategoryDetailDialog(
+            CategoryBreakdown.detail(txns, month, cat, cur, rates, rules), cur, budgets[cat],
+            onDismiss = { detailCategory = null }, onEdit = { editingId = it.id }, onSetLimit = { limitFor = cat },
+            onShowInLedger = { catFilter = cat; detailCategory = null },
+        )
+    }
     if (adding) TxnDialog(null, cur, today, rules, { t, _ -> vm.saveTxn(t, true, false); adding = false }, null) { adding = false }
     editingId?.let { id ->
         val t = txns.firstOrNull { it.id == id }

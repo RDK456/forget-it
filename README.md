@@ -69,3 +69,8 @@ Nothing here sends data anywhere: messages are read on the phone, and only payme
 - **Categories**: found payments are sorted automatically (food, groceries, transport, shopping, bills, subscriptions, EMI, health and more). Change one and Forget-it remembers it for that merchant from then on.
 - **Budgets**: set an overall monthly budget and a limit for any category. You see what is left, about how much you can spend each remaining day, and where the month is heading at the current pace. Alerts arrive at 80 percent and again when a budget or limit is passed.
 - **Overview** shows the month's spending, the budget bar, income and the top three categories. The old "going out" card is now labelled Fixed commitments (subscriptions, EMIs and bills).
+
+## Category drill-down and bills for stock
+
+- **Tap any category** on the Money tab (or the Highest spending card) to see where that money went: the total and change against last month, a day-by-day chart with weekly totals, the merchants ranked by spend, and every payment with its date. Tap a merchant to list only its payments, tap a payment to edit it, and set the category's limit from there.
+- **Scan a bill for stock**: on the Stock tab the camera button reads a grocery bill and adds every item with its quantity automatically (or restocks items you already track). Lines like "2 x 1.50 3.00", "Rice 5kg" and "Milk 1L" are understood, and photographing the same bill twice does not add it twice.

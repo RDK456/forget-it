@@ -196,6 +196,8 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         }
         onDone(added)
     }
+    /** Stock screen: a photographed grocery bill is read and every item is added or restocked without a review step. */
+    fun openStockScan() { c.scan.value = app.forgetit.grocery.ScanRequest(autoAdd = true) }
     fun openScan() { c.scan.value = app.forgetit.grocery.ScanRequest(null) }
 
     /** Saves what the scanner found, each into its own tracker. Returns a short summary for the user. */

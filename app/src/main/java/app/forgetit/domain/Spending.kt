@@ -125,3 +125,49 @@ object SpendStats {
         else -> BudgetLevel.OK
     }
 }
+
+/** Who a payment went to: the merchant, else the note, else "Unknown". */
+fun Txn.payee(): String = merchant?.trim()?.ifBlank { null } ?: note.trim().ifBlank { "Unknown" }
+
+data class MerchantSpend(val merchant: String, val count: Int, val minor: Long, val percent: Int)
+data class WeekSpend(val fromDay: Int, val toDay: Int, val minor: Long)
+
+/** Everything behind one category in one month: where it went, when, and each payment. */
+data class CategoryDetail(
+    val category: String,
+    val month: YearMonth,
+    val totalMinor: Long,
+    val previousMinor: Long,
+    val byMerchant: List<MerchantSpend>,
+    val byDay: Map<Int, Long>,
+    val byWeek: List<WeekSpend>,
+    val txns: List<Txn>,
+    val biggestDay: Pair<Int, Long>?,
+    val biggestTxn: Txn?,
+    val excluded: Int,
+)
+
+object CategoryBreakdown {
+    fun detail(
+        txns: List<Txn>, month: YearMonth, category: String, currency: String, rates: Map<String, BigDecimal>, rules: Map<String, String> = emptyMap(),
+    ): CategoryDetail {
+        fun amount(t: Txn): Long? = convertMinor(BigDecimal(t.amountMinor), t.currency, currency, rates)?.let { Cost.round(it) }
+        fun mine(t: Txn, m: YearMonth) = t.status != "IGNORED" && t.direction == TxnDirection.DEBIT && YearMonth.from(t.date) == m && t.categoryOr(rules) == category
+        val rows = txns.filter { mine(it, month) }.sortedWith(compareByDescending<Txn> { it.date }.thenByDescending { it.id })
+        var excluded = 0
+        val priced = rows.mapNotNull { t -> amount(t)?.let { t to it } ?: run { excluded++; null } }
+        val total = priced.sumOf { it.second }
+        val merchants = priced.groupBy { Categorizer.ruleKey(it.first.payee()).ifEmpty { "unknown" } }.values.map { g ->
+            MerchantSpend(g.first().first.payee(), g.size, g.sumOf { it.second }, if (total > 0) Math.round(g.sumOf { it.second } * 100.0 / total).toInt() else 0)
+        }.sortedWith(compareByDescending<MerchantSpend> { it.minor }.thenByDescending { it.count }.thenBy { it.merchant })
+        val days = priced.groupBy { it.first.date.dayOfMonth }.mapValues { e -> e.value.sumOf { it.second } }
+        val last = month.lengthOfMonth()
+        val weeks = listOf(1 to 7, 8 to 14, 15 to 21, 22 to 28, 29 to last).filter { it.first <= last }
+            .map { (from, to) -> WeekSpend(from, minOf(to, last), days.filterKeys { it in from..to }.values.sum()) }
+        val previous = txns.filter { mine(it, month.minusMonths(1)) }.sumOf { amount(it) ?: 0L }
+        return CategoryDetail(
+            category, month, total, previous, merchants, days, weeks, rows,
+            days.maxByOrNull { it.value }?.let { it.key to it.value }, priced.maxByOrNull { it.second }?.first, excluded,
+        )
+    }
+}

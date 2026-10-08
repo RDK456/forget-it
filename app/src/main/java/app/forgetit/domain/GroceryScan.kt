@@ -18,6 +18,7 @@ object GroceryScan {
         RegexOption.IGNORE_CASE,
     )
     private val PRICE = Regex("""(?<![\d.])(\d{1,6}[.,]\d{2})\s*[A-Za-z]?\s*$""")
+    private val QTY_TIMES_PRICE = Regex("""\s(\d{1,3})\s*[xX@]\s*\d+[.,]\d{1,2}\s+(\d{1,6}[.,]\d{2})\s*$""")
     private val QTY_FIRST = Regex("""^\s*(\d{1,3})\s*[xX*]?\s+(?=[A-Za-z])""")
     private val SIZE = Regex("""(?<![\d.])(\d+(?:[.,]\d+)?)\s*(kg|kgs|g|gm|gms|ltr|lt|l|ml|pcs|pc|pack|dozen)\b""", RegexOption.IGNORE_CASE)
     private val TOKEN_CODE = Regex("""\b\d{4,}\b|\b[A-Z]{0,2}\d{3,}[A-Z]*\b""")
@@ -77,12 +78,18 @@ object GroceryScan {
         for (raw in text.lines()) {
             var line = raw.trim()
             if (line.length < 3 || SKIP.containsMatchIn(line)) continue
-            val price = PRICE.find(line)?.let { m ->
+            var quantity: Long? = null
+            var unit: String? = null
+            val times = QTY_TIMES_PRICE.find(line)
+            val price = if (times != null) {
+                quantity = times.groupValues[1].toLong() * 1000
+                unit = "pcs"
+                line = line.removeRange(times.range).trim()
+                Money.parseMinor(times.groupValues[2].replace(',', '.'), currency)
+            } else PRICE.find(line)?.let { m ->
                 line = line.removeRange(m.range).trim()
                 Money.parseMinor(m.groupValues[1].replace(',', '.'), currency)
             }
-            var quantity: Long? = null
-            var unit: String? = null
             QTY_FIRST.find(line)?.let { m ->
                 quantity = m.groupValues[1].toLong() * 1000
                 unit = "pcs"

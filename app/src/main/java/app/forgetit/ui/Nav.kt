@@ -90,7 +90,7 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
     val today = LocalDate.now(container.clock)
     androidx.compose.runtime.LaunchedEffect(sharedText) { if (sharedText != null) nav.navigate("share") }
     val scanRequest by container.scan.collectAsStateWithLifecycle()
-    scanRequest?.let { req -> app.forgetit.ui.scan.ScanAnythingDialog(vm, vm.settings.value.defaultCurrency, req.uri, req.preloaded, req.note) { container.scan.value = null } }
+    scanRequest?.let { req -> app.forgetit.ui.scan.ScanAnythingDialog(vm, vm.settings.value.defaultCurrency, req.uri, req.preloaded, req.note, req.autoAdd) { container.scan.value = null } }
     var askScan by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) { askScan = !container.settings.flow.first().scanPrompted }
     if (askScan) app.forgetit.ui.txn.ScanSetupDialog(vm) { askScan = false }

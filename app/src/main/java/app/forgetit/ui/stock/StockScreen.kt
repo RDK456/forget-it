@@ -79,7 +79,7 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
                         )
                     } catch (e: android.content.ActivityNotFoundException) { toast("Voice input is not available on this phone") }
                 }) { Icon(AppIcons.Mic, "Add by voice") }
-                androidx.compose.material3.SmallFloatingActionButton(onClick = { vm.openScan() }) { Icon(AppIcons.Camera, "Scan groceries") }
+                androidx.compose.material3.SmallFloatingActionButton(onClick = { vm.openStockScan() }) { Icon(AppIcons.Camera, "Scan groceries") }
                 FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add item") }
             }
         },

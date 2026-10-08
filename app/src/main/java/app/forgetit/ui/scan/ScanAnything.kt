@@ -134,13 +134,15 @@ private fun List<Entry>.toDetected(): List<Detected> {
 
 /** Any photo or screenshot: read on the phone, sorted into subscription, EMI, bill, groceries or a payment note, then reviewed before saving. */
 @Composable
-fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, preloaded: List<Detected>? = null, note: String? = null, onDismiss: () -> Unit) {
+fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, preloaded: List<Detected>? = null, note: String? = null, autoAdd: Boolean = false, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val entries = remember { mutableStateListOf<Entry>() }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf(note) }
+    val added = remember { mutableStateListOf<ScannedItem>() }
+    val seen = remember { mutableSetOf<Int>() }
     var cameraFile by remember { mutableStateOf<File?>(null) }
 
     fun scan(uri: Uri) = scope.launch {
@@ -150,7 +152,13 @@ fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, prelo
             val read = GroceryScanner.read(ctx, uri)
             val found = DocScan.classify(read.text, read.labels, currency, LocalDate.now())
             if (found == null) message = "Could not tell what this is. Try a clearer photo or a closer crop."
-            else entries += found.toEntries().filter { n -> entries.none { it.kind == n.kind && it.name.equals(n.name, true) } }
+            else if (autoAdd && found.kind == DocKind.GROCERY && found.items.isNotEmpty()) {
+                if (!seen.add(read.text.hashCode())) message = "That bill was already added."
+                else {
+                    vm.saveDetected(listOf(found)) { summary -> info = summary }
+                    added += found.items
+                }
+            } else entries += found.toEntries().filter { n -> entries.none { it.kind == n.kind && it.name.equals(n.name, true) } }
         } catch (e: Exception) {
             message = "Could not read that photo."
         }
@@ -182,9 +190,10 @@ fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, prelo
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Scan anything", style = MaterialTheme.typography.headlineSmall)
+                Text(if (autoAdd) "Scan a bill for stock" else "Scan anything", style = MaterialTheme.typography.headlineSmall)
                 Text(
-                    "A bill, EMI message, subscription receipt, grocery receipt or any payment screenshot. It is read on this phone, sorted into the right tracker, and shown here for you to check.",
+                    if (autoAdd) "Photograph a grocery bill. Every item and quantity is read on this phone and added to your household stock automatically, or restocked if you already track it."
+                    else "A bill, EMI message, subscription receipt, grocery receipt or any payment screenshot. It is read on this phone, sorted into the right tracker, and shown here for you to check.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -195,7 +204,7 @@ fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, prelo
                     }, enabled = !busy) { Text(if (entries.isEmpty()) "Take photo" else "Add another") }
                     OutlinedButton({ picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy) { Text("Photo or screenshot") }
                 }
-                OutlinedButton(
+                if (!autoAdd) OutlinedButton(
                     { sheetPicker.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv", "text/comma-separated-values", "application/vnd.ms-excel", "application/octet-stream", "text/plain")) },
                     Modifier.fillMaxWidth(), enabled = !busy,
                 ) {
@@ -223,12 +232,21 @@ fun ScanAnythingDialog(vm: MainViewModel, currency: String, initial: Uri?, prelo
                     Text("Reading...")
                 }
                 message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                if (added.isNotEmpty()) OutlinedCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Added to your stock (${added.size})", style = MaterialTheme.typography.titleSmall)
+                        added.forEach {
+                            Text(it.name + ": " + BigDecimal(it.quantityMilli).movePointLeft(3).stripTrailingZeros().toPlainString() + " " + it.unit + ", " + it.category, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text("Open an item in Household stock to change its quantity, expiry or low-stock level.", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     itemsIndexed(entries, key = { i, e -> "$i${e.kind}" }) { i, e -> EntryCard(e) { entries[i] = it } }
                 }
                 val chosen = entries.toDetected()
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onDismiss) { Text("Cancel") }
+                    TextButton(onDismiss) { Text(if (added.isNotEmpty()) "Done" else "Cancel") }
                     Button({
                         vm.saveDetected(chosen) { summary ->
                             Toast.makeText(ctx, summary, Toast.LENGTH_LONG).show()
