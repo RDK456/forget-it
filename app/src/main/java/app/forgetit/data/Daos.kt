@@ -26,6 +26,7 @@ interface PhotoDao {
     @Query("DELETE FROM photo WHERE id = :id") suspend fun delete(id: Long)
     @Query("DELETE FROM photo WHERE ownerType = :type AND ownerId = :id") suspend fun deleteFor(type: String, id: Long)
     @Query("SELECT fileName FROM photo") suspend fun allFileNames(): List<String>
+    @Query("UPDATE photo SET ownerId = :to WHERE ownerType = :type AND ownerId = :from") suspend fun reassign(type: String, from: Long, to: Long)
 }
 
 @Dao

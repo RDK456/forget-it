@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.forgetit.AppContainer
+import app.forgetit.data.OwnerType
 import app.forgetit.data.SaveResult
 import app.forgetit.domain.Cycle
 import app.forgetit.domain.Money
@@ -45,6 +46,7 @@ class EditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
 
     init {
         viewModelScope.launch {
+            if (id == 0L) c.photos.deleteAll(OwnerType.SUBSCRIPTION, 0)
             val today = LocalDate.now(c.clock)
             val existing = if (id != 0L) c.subscriptions.get(id) else null
             form = if (existing != null) {
@@ -90,7 +92,10 @@ class EditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
         )
         viewModelScope.launch {
             when (val r = c.subscriptions.save(sub)) {
-                is SaveResult.Saved -> { errors = emptyMap(); savedId = r.id }
+                is SaveResult.Saved -> {
+                    if (id == 0L) c.photos.reassign(OwnerType.SUBSCRIPTION, 0, r.id)
+                    errors = emptyMap(); savedId = r.id
+                }
                 is SaveResult.Invalid -> errors = r.errors.associate { it.field to it.message }
             }
         }

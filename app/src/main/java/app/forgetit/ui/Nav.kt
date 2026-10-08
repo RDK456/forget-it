@@ -35,7 +35,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.forgetit.AppContainer
+import app.forgetit.data.OwnerType
 import app.forgetit.ui.edit.EditScreen
+import app.forgetit.ui.photos.PhotoSection
 import app.forgetit.ui.edit.EditViewModel
 import app.forgetit.ui.overview.OverviewScreen
 import app.forgetit.ui.subscriptions.SubscriptionsScreen
@@ -45,7 +47,7 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 
 private val TABS = listOf(
     Tab("overview", "Overview", Icons.Filled.Home),
-    Tab("subs", "Subscriptions", Icons.Filled.Refresh),
+    Tab("subs", "Subs", Icons.Filled.Refresh),
     Tab("loans", "Loans", Icons.AutoMirrored.Filled.List),
     Tab("stock", "Stock", Icons.Filled.ShoppingCart),
     Tab("more", "More", Icons.Filled.Menu),
@@ -126,5 +128,5 @@ private fun MoreScreen(nav: NavController) {
 @Composable
 private fun EditRoute(id: Long, container: AppContainer, nav: NavController) {
     val evm: EditViewModel = viewModel(key = "edit$id", factory = viewModelFactory { initializer { EditViewModel(container, id) } })
-    EditScreen(evm, onDone = { nav.popBackStack() })
+    EditScreen(evm, onDone = { nav.popBackStack() }, photos = { PhotoSection(container.photos, OwnerType.SUBSCRIPTION, id) })
 }
