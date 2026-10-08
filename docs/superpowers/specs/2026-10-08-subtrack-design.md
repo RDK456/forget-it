@@ -200,3 +200,10 @@ Optional. `BiometricPrompt` with device-credential fallback. Locks on cold start
 - **Manual exchange rates** go stale; the date each was last edited is shown.
 - **JDK 17 must be installed** before the first build.
 - The project folder is not a git repository; Plan A's first task runs `git init`.
+
+## 17. Changes after approval (2026-10-08, built during the beta)
+
+- **Plan D, Transactions (added at the user request):** payment SMS are read on the device (READ_SMS/RECEIVE_SMS, offline), parsed by `SmsParser`, and kept as transactions (parsed fields plus a 160-character snippet). A Transactions screen lists them, suggests recurring charges as subscriptions and matches debits to loan EMIs. Emails: the Gmail API needs an OAuth client and an internet permission, so it is not built; instead the app accepts shared text (Gmail, Share, Forget-it) and parses it the same way. Database v4.
+- **Design system:** brand palette (teal, indigo, amber, berry), Manrope bundled font, Lucide icons (`com.composables:icons-lucide:1.1.0`), outlined cards, hero card on Overview, press feedback, animated lists/donut and screen transitions. Wallpaper-derived dynamic colour was dropped on purpose.
+- **Reminders:** low-stock reminders use one key per episode (the baseline date) instead of a `lowAlerted` column. A missed reminder fires one minute after the app next syncs.
+- **Not built yet:** CSV for loans and stock, EMIs in the home-screen widget, Room migration instrumented tests, zip backup with photos.
