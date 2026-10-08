@@ -8,8 +8,9 @@ import androidx.room.RoomDatabase
         SubscriptionEntity::class, PhotoEntity::class, ReminderLogEntity::class,
         LoanEntity::class, LoanPaymentEntity::class, LoanAdjustmentEntity::class,
         StockItemEntity::class, StockBatchEntity::class, StockLogEntity::class,
+        TxnEntity::class,
     ],
-    version = 3,
+    version = 4,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun subscriptionDao(): SubscriptionDao
@@ -17,4 +18,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun reminderLogDao(): ReminderLogDao
     abstract fun loanDao(): LoanDao
     abstract fun stockDao(): StockDao
+    abstract fun txnDao(): TxnDao
 }

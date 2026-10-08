@@ -41,3 +41,15 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
     }
 }
+
+/** Plan D: transactions parsed from SMS and shared text. Mirrors the exported schema 4.json. */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS txn (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, direction TEXT NOT NULL, " +
+                "amountMinor INTEGER NOT NULL, currency TEXT NOT NULL, merchant TEXT, accountHint TEXT, epochDay INTEGER NOT NULL, " +
+                "source TEXT NOT NULL, status TEXT NOT NULL, snippet TEXT NOT NULL, dedupe TEXT NOT NULL)",
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_txn_dedupe ON txn (dedupe)")
+    }
+}

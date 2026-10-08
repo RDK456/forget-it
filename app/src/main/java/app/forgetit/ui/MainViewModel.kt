@@ -91,4 +91,37 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     }
 
     fun discardBatch(batchId: Long) = viewModelScope.launch { c.stock.discard(batchId, java.time.LocalDate.now(c.clock)) }
+
+    val txns = c.txns.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun scanSms(days: Long, onDone: (Int) -> Unit) = viewModelScope.launch {
+        val cur = settings.value.defaultCurrency
+        val since = java.time.LocalDate.now(c.clock).minusDays(days)
+        onDone(app.forgetit.txn.SmsScanner.scanInbox(c.context, c.txns, since, cur, java.time.ZoneId.systemDefault()))
+    }
+
+    fun setTxnStatus(id: Long, status: String) = viewModelScope.launch { c.txns.setStatus(id, status) }
+    fun deleteTxn(id: Long) = viewModelScope.launch { c.txns.delete(id) }
+    fun clearTxns() = viewModelScope.launch { c.txns.deleteAll() }
+
+    /** Saves a detected recurring charge as a subscription, started on its latest charge date. */
+    fun addSubscriptionFrom(s: app.forgetit.domain.RecurringSuggestion, onDone: (String) -> Unit) = viewModelScope.launch {
+        val sub = app.forgetit.domain.Subscription(
+            name = s.merchant, amountMinor = s.amountMinor, currency = s.currency, cycle = s.cycle, startDate = s.lastDate,
+            category = app.forgetit.domain.PRESETS.firstOrNull { it.name.equals(s.merchant, ignoreCase = true) }?.category ?: "Other",
+        )
+        onDone(when (val r = c.subscriptions.save(sub)) {
+            is app.forgetit.data.SaveResult.Saved -> "Added ${s.merchant} to subscriptions"
+            is app.forgetit.data.SaveResult.Invalid -> r.errors.first().message
+        })
+    }
+
+    fun markEmiFrom(m: app.forgetit.domain.EmiMatch, t: app.forgetit.domain.Txn) = viewModelScope.launch {
+        c.loans.markPaid(m.loanId, m.installmentNo, t.date, t.amountMinor)
+    }
+
+    fun addManualTxn(p: app.forgetit.domain.ParsedTxn, source: String, text: String, onDone: () -> Unit) = viewModelScope.launch {
+        c.txns.addIfNew(p, source, text)
+        onDone()
+    }
 }

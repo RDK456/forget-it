@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -51,6 +52,8 @@ import app.forgetit.ui.loans.LoanEditScreen
 import app.forgetit.ui.loans.LoanEditViewModel
 import app.forgetit.ui.loans.LoansScreen
 import app.forgetit.ui.settings.SettingsScreen
+import app.forgetit.ui.txn.ShareImportScreen
+import app.forgetit.ui.txn.TransactionsScreen
 import app.forgetit.ui.stock.StockDetailScreen
 import app.forgetit.ui.stock.StockEditScreen
 import app.forgetit.ui.stock.StockEditViewModel
@@ -72,11 +75,12 @@ private val TABS = listOf(
 )
 
 @Composable
-fun ForgetItRoot(container: AppContainer) {
+fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedConsumed: () -> Unit = {}) {
     val vm: MainViewModel = viewModel(factory = viewModelFactory { initializer { MainViewModel(container) } })
     val nav = rememberNavController()
     val route = nav.currentBackStackEntryAsState().value?.destination?.route
     val today = LocalDate.now(container.clock)
+    androidx.compose.runtime.LaunchedEffect(sharedText) { if (sharedText != null) nav.navigate("share") }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -116,6 +120,8 @@ fun ForgetItRoot(container: AppContainer) {
             composable("calendar") { CalendarScreen(vm, today, onBack = { nav.popBackStack() }) }
             composable("insights") { InsightsScreen(vm, today, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(vm, onBack = { nav.popBackStack() }) }
+            composable("transactions") { TransactionsScreen(vm, today, onBack = { nav.popBackStack() }) }
+            composable("share") { ShareImportScreen(vm, sharedText.orEmpty(), today, onDone = { onSharedConsumed(); nav.popBackStack() }) }
             composable("edit/{id}") { e -> EditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
         }
     }
@@ -135,6 +141,7 @@ private fun MoreScreen(nav: NavController) {
             listOf(
                 Triple("calendar", "Calendar", Icons.Filled.DateRange),
                 Triple("insights", "Insights", Icons.Filled.Info),
+                Triple("transactions", "Transactions", Icons.Filled.Notifications),
                 Triple("settings", "Settings", Icons.Filled.Settings),
             ).forEach { (r, label, icon) ->
                 ListItem(
