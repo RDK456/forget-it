@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.ChargeCalendar
 import app.forgetit.domain.EntryType
+import app.forgetit.domain.loanCalendarEntries
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
 import app.forgetit.ui.ScreenScaffold
@@ -51,10 +52,15 @@ private fun dotColor(t: EntryType) = when (t) {
 @Composable
 fun CalendarScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
     val subs by vm.subs.collectAsStateWithLifecycle()
+    val loans by vm.loans.collectAsStateWithLifecycle()
+    val loanPay by vm.loanPayments.collectAsStateWithLifecycle()
+    val loanAdj by vm.loanAdjustments.collectAsStateWithLifecycle()
     var monthIndex by rememberSaveable { mutableStateOf(today.year * 12 + today.monthValue - 1) }
     var selected by rememberSaveable { mutableStateOf<Long?>(today.toEpochDay()) }
     val month = YearMonth.of(monthIndex / 12, monthIndex % 12 + 1)
-    val entries = ChargeCalendar.subscriptionEntries(subs, month)
+    val subEntries = ChargeCalendar.subscriptionEntries(subs, month)
+    val emiEntries = loanCalendarEntries(loans, loanAdj, loanPay, month, today)
+    val entries = (subEntries.keys + emiEntries.keys).associateWith { subEntries[it].orEmpty() + emiEntries[it].orEmpty() }
     val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
     val lead = (month.atDay(1).dayOfWeek.value - first.value + 7) % 7
 

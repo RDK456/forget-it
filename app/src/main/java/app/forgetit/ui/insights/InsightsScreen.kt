@@ -25,7 +25,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.Money
+import app.forgetit.domain.CategorySlice
 import app.forgetit.domain.computeInsights
+import app.forgetit.domain.loanMonthlyOutgo
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
 import app.forgetit.ui.ScreenScaffold
@@ -38,7 +40,13 @@ fun InsightsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
     val subs by vm.subs.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val cur = settings.defaultCurrency
-    val ins = computeInsights(subs, today, cur, settings.rates.mapValues { it.value.value })
+    val loans by vm.loans.collectAsStateWithLifecycle()
+    val loanPay by vm.loanPayments.collectAsStateWithLifecycle()
+    val loanAdj by vm.loanAdjustments.collectAsStateWithLifecycle()
+    val rates = settings.rates.mapValues { it.value.value }
+    val emi = loanMonthlyOutgo(loans, loanAdj, loanPay, today, cur, rates)
+    val base = computeInsights(subs, today, cur, rates, listOf(CategorySlice("Loans (EMI)", emi.monthlyMinor)))
+    val ins = base.copy(excluded = base.excluded + emi.excluded)
 
     ScreenScaffold("Insights", onBack) { pad ->
         ListScreen(pad) {
