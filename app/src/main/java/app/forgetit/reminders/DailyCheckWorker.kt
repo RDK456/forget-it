@@ -25,6 +25,7 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
                 }
             }
         }
+        BudgetAlerts.check(c)
         c.reminders.sync()
         return Result.success()
     }

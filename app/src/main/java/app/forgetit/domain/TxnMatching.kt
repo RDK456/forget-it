@@ -16,6 +16,8 @@ data class Txn(
     val status: String = "NEW",
     val snippet: String = "",
     val sender: String = "",
+    val category: String = "",
+    val note: String = "",
 )
 
 data class RecurringSuggestion(val merchant: String, val amountMinor: Long, val currency: String, val cycle: Cycle, val lastDate: LocalDate, val count: Int)

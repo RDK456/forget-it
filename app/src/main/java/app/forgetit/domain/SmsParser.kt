@@ -25,7 +25,7 @@ object SmsParser {
     private val AMOUNT_FIRST = Regex("""($CUR)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)""", IC)
     private val AMOUNT_LAST = Regex("""([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s*(rs|inr|usd|eur|gbp|aed)\b""", IC)
     private val MERCHANT = Regex(
-        """(?:\bat\b|\bto\b|\btowards\b|\bfor\b|@)\s+([A-Za-z0-9][A-Za-z0-9 &._*-]{1,40}?)(?=\s+(?:on|via|using|ref|from|with|txn|if|has|is|dated|date|avl|bal|available)\b|\s+\d{1,2}[-/]|[.,;]|$)""",
+        """(?:\bat\b|\bto\b|\btowards\b|\bfor\b|\bfrom\b|@)\s+([A-Za-z0-9][A-Za-z0-9 &._*-]{1,40}?)(?=\s+(?:on|via|using|ref|from|with|txn|if|has|is|dated|date|avl|bal|available)\b|\s+\d{1,2}[-/]|[.,;]|$)""",
         IC,
     )
     private val ACCOUNT = Regex("""(?:a/c|acct|account|card)(?:\s+no\.?)?\s*(?:ending|number|no\.?)?\s*[xX*]*\s*(\d{3,4})""", IC)

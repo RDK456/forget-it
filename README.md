@@ -61,3 +61,11 @@ Forget-it is installed from a file, so Android adds some safety steps. They are 
 3. **SMS and email permissions greyed out or the Allow button does nothing** (Android 13 and later): open Settings, Apps, Forget-it, tap the three-dot menu, choose Allow restricted settings, confirm with your fingerprint or PIN, then go back to Forget-it and allow SMS and notification access. If the menu item is missing, tap Allow in the app once first so Android shows the block, then try again. The app has the same steps under Settings, Capture.
 
 Nothing here sends data anywhere: messages are read on the phone, and only payments are kept.
+
+## Money and budgets
+
+- **Money tab**: every payment and income in one ledger: found in SMS, email, Gmail and photos, or typed in with the plus button or the Spend shortcut on Overview. Filter by All, Out or In, search, tap a month arrow to look back, and tap any row to edit, recategorise or delete it.
+- **Where it went**: spending by category for the month, highest first, with the change against last month and a six-month trend. Tap a category to filter the ledger to it.
+- **Categories**: found payments are sorted automatically (food, groceries, transport, shopping, bills, subscriptions, EMI, health and more). Change one and Forget-it remembers it for that merchant from then on.
+- **Budgets**: set an overall monthly budget and a limit for any category. You see what is left, about how much you can spend each remaining day, and where the month is heading at the current pace. Alerts arrive at 80 percent and again when a budget or limit is passed.
+- **Overview** shows the month's spending, the budget bar, income and the top three categories. The old "going out" card is now labelled Fixed commitments (subscriptions, EMIs and bills).

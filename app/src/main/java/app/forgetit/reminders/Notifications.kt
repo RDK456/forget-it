@@ -22,6 +22,7 @@ object Notifications {
     const val CH_BILLS = "bills"
     const val CH_DIGEST = "digest"
     const val CH_FOUND = "found"
+    const val CH_BUDGET = "budget"
     const val CH_UPDATE = "app_update"
 
     private val CHANNELS = listOf(
@@ -33,6 +34,7 @@ object Notifications {
         Triple(CH_BILLS, "Bills and utilities", NotificationManager.IMPORTANCE_HIGH),
         Triple(CH_DIGEST, "Weekly summary", NotificationManager.IMPORTANCE_LOW),
         Triple(CH_FOUND, "New payments found", NotificationManager.IMPORTANCE_LOW),
+        Triple(CH_BUDGET, "Budget alerts", NotificationManager.IMPORTANCE_DEFAULT),
         Triple(CH_UPDATE, "App updates", NotificationManager.IMPORTANCE_LOW),
     )
 

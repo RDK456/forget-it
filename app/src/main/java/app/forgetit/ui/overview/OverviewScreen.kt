@@ -87,6 +87,9 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate, onQuick: (String) -> Uni
     val billTint = domainColors.bill
     val haptic = LocalHapticFeedback.current
     val updateState by vm.c.updater.state.collectAsStateWithLifecycle()
+    val allTxns by vm.txns.collectAsStateWithLifecycle()
+    val txnRules by vm.categoryRules.collectAsStateWithLifecycle()
+    val spend = app.forgetit.domain.SpendStats.summary(allTxns, java.time.YearMonth.from(today), settings.defaultCurrency, settings.rates.mapValues { it.value.value }, txnRules)
 
     val rates = settings.rates.mapValues { it.value.value }
     val cur = settings.defaultCurrency
@@ -168,7 +171,7 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate, onQuick: (String) -> Uni
                     }
                 }
                 item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, billOut.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
-                if (settings.budgetMinor > 0) item { BudgetBar(monthlyAll, settings.budgetMinor, cur) }
+                item { app.forgetit.ui.money.SpendCard(spend, settings.budgetMinor, cur, today) { onQuick("money") } }
                 item { Text("Coming up in $UPCOMING_DAYS days", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
                 if (upcoming.isEmpty()) item { Text("Nothing due soon. Enjoy the quiet.", style = MaterialTheme.typography.bodyMedium) }
                 itemsIndexed(upcoming, key = { _, u -> u.key }) { i, u ->

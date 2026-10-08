@@ -43,7 +43,7 @@ fun OutgoHero(subsMinor: Long, emiMinor: Long, billsMinor: Long, yearlyMinor: Lo
 
     OutlinedCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Going out this month", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Fixed commitments this month", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 Money.format(shown.toLong(), currency),
                 style = MaterialTheme.typography.displaySmall.copy(fontSize = 38.sp, fontWeight = FontWeight.ExtraBold),

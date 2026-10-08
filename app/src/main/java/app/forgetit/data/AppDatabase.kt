@@ -9,8 +9,9 @@ import androidx.room.RoomDatabase
         LoanEntity::class, LoanPaymentEntity::class, LoanAdjustmentEntity::class,
         StockItemEntity::class, StockBatchEntity::class, StockLogEntity::class,
         TxnEntity::class, BillEntity::class, BillEntryEntity::class, SnoozeEntity::class,
+        CategoryRuleEntity::class, CategoryBudgetEntity::class,
     ],
-    version = 7,
+    version = 8,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun subscriptionDao(): SubscriptionDao

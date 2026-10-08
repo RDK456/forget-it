@@ -17,7 +17,7 @@ object AutoScan {
         var p = SmsParser.parse(text, LocalDate.now(c.clock), s.defaultCurrency) ?: return false
         if (p.merchant == null && !fallbackMerchant.isNullOrBlank()) p = p.copy(merchant = fallbackMerchant.trim().take(40))
         val added = c.txns.addIfNew(p, source, text, sender)
-        if (added) markMatchedEmis(c)
+        if (added) { markMatchedEmis(c); app.forgetit.reminders.BudgetAlerts.check(c) }
         return added
     }
 
@@ -46,7 +46,7 @@ object AutoScan {
         val days = if (s.lastScanDay == 0L) 90L else (today.toEpochDay() - s.lastScanDay + 1).coerceIn(2, 90)
         val n = SmsScanner.scanInbox(c.context, c.txns, today.minusDays(days), s.defaultCurrency, ZoneId.systemDefault(), s.mutedSenders)
         if (n >= 0) c.settings.setLastScanDay(today.toEpochDay())
-        if (n > 0) markMatchedEmis(c)
+        if (n > 0) { markMatchedEmis(c); app.forgetit.reminders.BudgetAlerts.check(c) }
         if (n > 0 && notify) Notifications.showFound(c.context, n)
         return n
     }

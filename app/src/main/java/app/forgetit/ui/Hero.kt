@@ -101,6 +101,7 @@ fun QuickTile(icon: ImageVector, label: String, brush: TrackerBrush, modifier: M
 fun QuickActions(onAction: (String) -> Unit, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         QuickTile(AppIcons.Camera, "Scan", Brushes.scan, Modifier.weight(1f)) { onAction("scan") }
+        QuickTile(AppIcons.Wallet, "Spend", Brushes.berry, Modifier.weight(1f)) { onAction("money?add=true") }
         QuickTile(AppIcons.Subscriptions, "Sub", Brushes.subscription, Modifier.weight(1f)) { onAction("edit/0") }
         QuickTile(AppIcons.Loans, "EMI", Brushes.loan, Modifier.weight(1f)) { onAction("loanedit/0") }
         QuickTile(AppIcons.Bills, "Bill", Brushes.bill, Modifier.weight(1f)) { onAction("billedit/0") }

@@ -60,4 +60,14 @@ class SmsParserTest {
         assertEquals(TxnDirection.DEBIT, t.direction)
         assertEquals(1549L, t.amountMinor)
     }
+
+    @Test fun creditReadsTheSenderAfterFrom() {
+        val t = parse("USD 2500.00 credited to your account. Salary from ACME CORP.")!!
+        assertEquals(TxnDirection.CREDIT, t.direction)
+        assertEquals("Acme Corp", t.merchant)
+    }
+
+    @Test fun debitFromAccountStillReadsTheMerchant() {
+        assertEquals("Spotify", parse("Rs 799.00 debited from a/c XX1234 at SPOTIFY on 08-Oct-26. Avl bal Rs 9,000")!!.merchant)
+    }
 }

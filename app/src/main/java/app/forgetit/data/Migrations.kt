@@ -94,3 +94,13 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         db.execSQL("ALTER TABLE txn ADD COLUMN sender TEXT NOT NULL DEFAULT ''")
     }
 }
+
+/** Spending categories: a category and a note on each payment, learned merchant rules, and per-category budgets. */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE txn ADD COLUMN category TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE txn ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+        db.execSQL("CREATE TABLE IF NOT EXISTS category_rule (merchantKey TEXT NOT NULL, category TEXT NOT NULL, PRIMARY KEY(merchantKey))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS category_budget (category TEXT NOT NULL, limitMinor INTEGER NOT NULL, PRIMARY KEY(category))")
+    }
+}

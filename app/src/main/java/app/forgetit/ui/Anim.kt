@@ -135,9 +135,12 @@ fun ConfettiBurst(trigger: Int, modifier: Modifier = Modifier) {
 
 /** A progress bar that fills smoothly to its value. */
 @Composable
-fun AnimatedProgress(target: Float, modifier: Modifier = Modifier) {
+fun AnimatedProgress(target: Float, modifier: Modifier = Modifier, color: Color = Color.Unspecified) {
     val p by animateFloatAsState(target, tween(800, easing = FastOutSlowInEasing), label = "progress")
-    androidx.compose.material3.LinearProgressIndicator(progress = { p }, modifier = modifier)
+    androidx.compose.material3.LinearProgressIndicator(
+        progress = { p }, modifier = modifier,
+        color = if (color == Color.Unspecified) androidx.compose.material3.ProgressIndicatorDefaults.linearColor else color,
+    )
 }
 
 /** A friendly empty state: a floating icon and a line that says what to do next. */

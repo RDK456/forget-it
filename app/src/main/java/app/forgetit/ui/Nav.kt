@@ -75,6 +75,7 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 
 private val TABS = listOf(
     Tab("overview", "Overview", AppIcons.Home),
+    Tab("money", "Money", AppIcons.Wallet),
     Tab("subs", "Subs", AppIcons.Subscriptions),
     Tab("loans", "Loans", AppIcons.Loans),
     Tab("stock", "Stock", AppIcons.Stock),
@@ -124,7 +125,16 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
             popEnterTransition = { fadeIn(tween(220)) },
             popExitTransition = { fadeOut(tween(140)) + slideOutHorizontally(tween(220)) { it / 14 } },
         ) {
-            composable("overview") { OverviewScreen(vm, today) { r -> if (r == "scan") vm.openScan() else nav.navigate(r) } }
+            composable("overview") {
+                OverviewScreen(vm, today) { r ->
+                    when (r) {
+                        "scan" -> vm.openScan()
+                        "money?add=true" -> { vm.addTxnRequest.value = true; nav.navigate("money") }
+                        else -> nav.navigate(r)
+                    }
+                }
+            }
+            composable("money") { app.forgetit.ui.money.MoneyScreen(vm, today, false) { nav.navigate("transactions") } }
             composable("subs") {
                 SubscriptionsScreen(vm, today, onAdd = { nav.navigate("edit/0") }, onOpen = { nav.navigate("edit/$it") })
             }
@@ -164,7 +174,7 @@ private fun MoreScreen(nav: NavController) {
                 Triple("calendar", "Calendar" to "Every charge on one month grid", AppIcons.Calendar) to b.bill,
                 Triple("insights", "Insights" to "Where the money goes", AppIcons.Insights) to b.scan,
                 Triple("bills", "Bills and utilities" to "Electricity, water, rent and more", AppIcons.Bills) to b.loan,
-                Triple("transactions", "Transactions" to "Payments found in SMS, email and photos", AppIcons.Transactions) to b.subscription,
+                Triple("transactions", "Detected payments" to "Found in SMS, email and photos, with suggestions", AppIcons.Transactions) to b.subscription,
                 Triple("settings", "Settings" to "Scanning, reminders, backup, lock", AppIcons.Settings) to b.berry,
             ).forEach { (item, brush) ->
                 val (r, text, icon) = item

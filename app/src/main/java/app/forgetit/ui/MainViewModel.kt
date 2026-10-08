@@ -320,7 +320,27 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { onDone(msg) }
     }
     fun setAutoUpdateCheck(on: Boolean) = viewModelScope.launch { c.settings.setAutoUpdateCheck(on) }
-    fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
+    val categoryRules = c.txns.observeRules().stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+    val categoryBudgets = c.txns.observeBudgets().stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** Set by the Spend quick action so the Money screen opens its add dialog. */
+    val addTxnRequest = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    /** Saves a typed-in or edited transaction; changing the category of a found one is remembered for that merchant. */
+    fun saveTxn(t: app.forgetit.domain.Txn, isNew: Boolean, learn: Boolean) = viewModelScope.launch {
+        if (isNew) c.txns.addManual(t.direction, t.amountMinor, t.currency, t.merchant, t.category, t.date, t.note)
+        else {
+            c.txns.update(t)
+            if (learn) c.txns.setCategory(t, t.category)
+        }
+        app.forgetit.reminders.BudgetAlerts.check(c)
+    }
+
+    fun setCategoryBudget(category: String, limitMinor: Long) = viewModelScope.launch {
+        c.txns.setBudget(category, limitMinor)
+        app.forgetit.reminders.BudgetAlerts.check(c)
+    }
+    fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor); app.forgetit.reminders.BudgetAlerts.check(c) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }
     fun applyPriceChange(pc: app.forgetit.domain.PriceChange) = viewModelScope.launch {
