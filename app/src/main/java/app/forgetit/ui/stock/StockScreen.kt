@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -59,7 +60,12 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Household stock") }) },
-        floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add item") } },
+        floatingActionButton = {
+            androidx.compose.foundation.layout.Column(horizontalAlignment = androidx.compose.ui.Alignment.End, verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                androidx.compose.material3.SmallFloatingActionButton(onClick = { vm.openScan() }) { Icon(AppIcons.Camera, "Scan groceries") }
+                FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add item") }
+            }
+        },
     ) { pad ->
         ListScreen(pad) {
             item { ShoppingCard(app.forgetit.domain.shoppingList(items, batches, logs, today), today, onBought = { vm.restock(it.itemId, it.buyMilli, null) }) }

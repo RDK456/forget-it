@@ -47,6 +47,8 @@ dependencies {
     implementation(libs.biometric)
     implementation(libs.coil.compose)
     implementation(libs.play.services.auth)
+    implementation(libs.mlkit.text)
+    implementation(libs.mlkit.label)
     implementation(libs.lucide)
 
     testImplementation(libs.junit)

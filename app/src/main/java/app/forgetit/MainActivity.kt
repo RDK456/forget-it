@@ -28,6 +28,10 @@ class MainActivity : FragmentActivity() {
     private fun readShare(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             sharedText.value = intent.getStringExtra(Intent.EXTRA_TEXT)?.take(20_000)
+        } else if (intent?.action == Intent.ACTION_SEND && intent.type?.startsWith("image/") == true) {
+            @Suppress("DEPRECATION")
+            val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+            if (uri != null) (application as ForgetItApp).container.scan.value = app.forgetit.grocery.ScanRequest(uri)
         }
     }
 

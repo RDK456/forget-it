@@ -183,6 +183,82 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     fun connectGmail(email: String) = viewModelScope.launch { c.settings.setGmailEmail(email) }
     fun disconnectGmail() = viewModelScope.launch { c.settings.setGmailEmail("") }
     fun syncGmail(onDone: (Int) -> Unit) = viewModelScope.launch { onDone(app.forgetit.gmail.GmailScanner.sync(c)) }
+    /** Adds reviewed scan results: restocks an item with the same name, otherwise creates it with a low-stock level of a quarter of the first purchase. */
+    fun addScannedItems(items: List<app.forgetit.domain.ScannedItem>, onDone: (Int) -> Unit) = viewModelScope.launch {
+        val today = java.time.LocalDate.now(c.clock)
+        val existing = c.stock.getItems()
+        var added = 0
+        for (s in items) {
+            val id = existing.firstOrNull { it.name.equals(s.name, ignoreCase = true) }?.id
+                ?: (c.stock.save(app.forgetit.domain.StockItem(name = s.name, unit = s.unit, category = s.category, baselineDate = today, lowThresholdMilli = s.quantityMilli / 4)) as? app.forgetit.data.SaveResult.Saved)?.id
+                ?: continue
+            if (c.stock.restock(id, s.quantityMilli, null, today, s.priceMinor) == null) added++
+        }
+        onDone(added)
+    }
+    fun openScan() { c.scan.value = app.forgetit.grocery.ScanRequest(null) }
+
+    /** Saves what the scanner found, each into its own tracker. Returns a short summary for the user. */
+    fun saveDetected(list: List<app.forgetit.domain.Detected>, onDone: (String) -> Unit) = viewModelScope.launch {
+        val today = java.time.LocalDate.now(c.clock)
+        val msgs = mutableListOf<String>()
+        for (d in list) {
+            when (d.kind) {
+                app.forgetit.domain.DocKind.SUBSCRIPTION -> {
+                    if (c.subscriptions.getAll().any { it.name.equals(d.name, ignoreCase = true) }) { msgs += "${d.name} is already in subscriptions"; continue }
+                    val sub = app.forgetit.domain.Subscription(
+                        name = d.name, amountMinor = d.amountMinor ?: continue, currency = d.currency, cycle = d.cycle, startDate = d.date ?: today, category = d.category,
+                    )
+                    msgs += when (val r = c.subscriptions.save(sub)) {
+                        is app.forgetit.data.SaveResult.Saved -> "Added ${d.name} to subscriptions"
+                        is app.forgetit.data.SaveResult.Invalid -> "${d.name}: ${r.errors.first().message}"
+                    }
+                }
+                app.forgetit.domain.DocKind.BILL -> {
+                    val bill = app.forgetit.domain.Bill(name = d.name, type = d.billType, currency = d.currency, cycle = d.cycle, anchorDate = d.date ?: today.plusDays(7))
+                    when (val r = c.bills.save(bill)) {
+                        is app.forgetit.data.SaveResult.Saved -> {
+                            d.amountMinor?.let { c.bills.record(r.id, bill.anchorDate, it, null) }
+                            msgs += "Added ${d.name} to bills"
+                        }
+                        is app.forgetit.data.SaveResult.Invalid -> msgs += "${d.name}: ${r.errors.first().message}"
+                    }
+                }
+                app.forgetit.domain.DocKind.EMI -> {
+                    val emi = d.amountMinor ?: continue
+                    val n = d.tenureMonths ?: 12
+                    val rate = d.ratePercent ?: java.math.BigDecimal.ZERO
+                    val monthly = rate.toDouble() / 1200
+                    val principal = if (monthly == 0.0) emi * n else (Math.floor(emi * (1 - Math.pow(1 + monthly, -n.toDouble())) / monthly) - n).toLong().coerceAtLeast(emi) // rounded down so the last installment is never an extra sliver
+                    val loan = app.forgetit.domain.Loan(
+                        name = d.name, lender = d.name, principalMinor = principal, currency = d.currency, annualRatePercent = rate, tenureMonths = n,
+                        firstEmiDate = d.date ?: today.plusMonths(1), emiOverrideMinor = emi, notes = "Added from a photo. Check the terms.",
+                    )
+                    msgs += when (val r = c.loans.save(loan)) {
+                        is app.forgetit.data.SaveResult.Saved -> "Added ${d.name} to loans"
+                        is app.forgetit.data.SaveResult.Invalid -> "${d.name}: ${r.errors.first().message}"
+                    }
+                }
+                app.forgetit.domain.DocKind.GROCERY -> {
+                    val existing = c.stock.getItems()
+                    var added = 0
+                    for (s in d.items) {
+                        val id = existing.firstOrNull { it.name.equals(s.name, ignoreCase = true) }?.id
+                            ?: (c.stock.save(app.forgetit.domain.StockItem(name = s.name, unit = s.unit, category = s.category, baselineDate = today, lowThresholdMilli = s.quantityMilli / 4)) as? app.forgetit.data.SaveResult.Saved)?.id
+                            ?: continue
+                        if (c.stock.restock(id, s.quantityMilli, null, today, s.priceMinor) == null) added++
+                    }
+                    msgs += "Added $added item(s) to household stock"
+                }
+                app.forgetit.domain.DocKind.PAYMENT -> {
+                    val amt = d.amountMinor ?: continue
+                    val p = app.forgetit.domain.ParsedTxn(app.forgetit.domain.TxnDirection.DEBIT, amt, d.currency, d.name, null, d.date ?: today)
+                    msgs += if (c.txns.addIfNew(p, "PHOTO", "${d.name} ${app.forgetit.domain.Money.format(amt, d.currency)} ${p.date}")) "Saved payment to ${d.name}" else "That payment is already saved"
+                }
+            }
+        }
+        onDone(msgs.joinToString("\n").ifEmpty { "Nothing to add" })
+    }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }
