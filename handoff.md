@@ -37,3 +37,6 @@ Forget-it (package `app.forgetit`): offline-first Android app that tracks subscr
 3. Tap-test the notification Keep/Delete/Undo buttons.
 4. Consider a Review screen listing all unreviewed items, and instrumented Room migration tests.
 5. Small UI fix: on the Money screen at 320dp the + button overlaps the hint text.
+
+## Update: 1.3.2
+Added `domain/TxnFilter.kt` (junk, forward, reminder, failed-payment and sender rules) and applied it in `AutoScan.ingest`, `SmsScanner`, `GmailScanner` and `AutoTracker`; `AutoScan.cleanUp` removes old junk on pull to refresh. Verified on the emulator: a real bank SMS is stored, an ad, a personal-number message and a "Fwd:" message are not.

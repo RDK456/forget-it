@@ -24,5 +24,5 @@ object GmailText {
 
     /** The search that finds payment-looking mail. [afterEpochSeconds] limits it to mail since the last sync. */
     fun query(afterEpochSeconds: Long): String =
-        "(receipt OR invoice OR payment OR subscription OR renewed OR billed OR charged OR \"your order\") after:$afterEpochSeconds"
+        "(receipt OR invoice OR payment OR subscription OR renewed OR billed OR charged OR \"your order\") -category:promotions -category:social -category:forums -in:spam -in:chats -subject:fwd -subject:fw after:$afterEpochSeconds"
 }

@@ -24,7 +24,7 @@ object GmailAuth {
     fun explain(raw: String?): String {
         val m = raw.orEmpty()
         return when {
-            m.contains("10:") || m.contains("DEVELOPER_ERROR", true) || m.contains("12500") || m.contains("16:") ->
+            m.contains("8:") || m.contains("UNREGISTERED", true) || m.contains("10:") || m.contains("DEVELOPER_ERROR", true) || m.contains("12500") || m.contains("16:") ->
                 "Google does not recognise this app yet. Gmail needs a one-time Google Cloud setup: an Android OAuth client for app.forgetit with this app's SHA-1, and your Gmail address added as a test user. Steps are in the README under Gmail setup."
             m.contains("7:") || m.contains("network", true) -> "Could not reach Google. Check your connection and try again."
             m.contains("access_denied", true) || m.contains("blocked", true) -> "Google blocked the sign-in. Add your Gmail address as a test user on the OAuth consent screen, then try again."

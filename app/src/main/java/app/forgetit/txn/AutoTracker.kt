@@ -38,7 +38,7 @@ object AutoTracker {
 
     /** After each new payment message: an EMI message that states amount and tenure becomes a loan; repeats become subscriptions or loans. */
     suspend fun onNewMessage(c: AppContainer, text: String, receivedOn: LocalDate = LocalDate.now(c.clock), source: String = "SMS", sender: String = "") = lock.withLock {
-        if (!looksFinancial(text)) return@withLock
+        if (!looksFinancial(text) || app.forgetit.domain.TxnFilter.isJunk(text.take(500))) return@withLock
         val s = c.settings.flow.first()
         if (s.autoCreateLoans) {
             AutoTrack.loanGuessFromMessage(text, s.defaultCurrency, receivedOn, c.loans.getLoans(), s.autoDismissed)?.let { createLoan(c, it) }

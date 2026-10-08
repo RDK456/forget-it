@@ -76,7 +76,9 @@ object GmailScanner {
                 val day = LocalDate.ofInstant(Instant.ofEpochMilli(msg.optLong("internalDate", nowSec * 1000)), ZoneId.systemDefault())
                 val text = "$subject. ${msg.optString("snippet")}"
                 val body = bodyText(payload)
-                val parsed = SmsParser.parse(text, day, s.defaultCurrency) ?: SmsParser.parse("$subject. $body", day, s.defaultCurrency)
+                // Judged on the subject and snippet: a receipt may carry an unsubscribe footer, an ad carries its offer up front.
+                val real = app.forgetit.domain.TxnFilter.accept(text, from)
+                val parsed = if (!real) null else SmsParser.parse(text, day, s.defaultCurrency) ?: SmsParser.parse("$subject. $body", day, s.defaultCurrency)
                 if (parsed != null) {
                     val p = if (parsed.merchant == null) parsed.copy(merchant = from.take(40)) else parsed
                     if (c.txns.addIfNew(p, "GMAIL", text, from)) added++

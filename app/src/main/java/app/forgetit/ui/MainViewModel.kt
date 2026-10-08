@@ -293,6 +293,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
             app.forgetit.txn.AutoScan.scanDue(c, force = forceScan)
             if (s.gmailEmail.isNotEmpty()) app.forgetit.gmail.GmailScanner.sync(c)
         }
+        app.forgetit.txn.AutoScan.cleanUp(c)
         app.forgetit.txn.AutoScan.markMatchedEmis(c)
         app.forgetit.txn.AutoTracker.onNewPayments(c)
         c.reminders.sync()

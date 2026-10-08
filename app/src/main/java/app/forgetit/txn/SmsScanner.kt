@@ -7,6 +7,7 @@ import android.provider.Telephony
 import androidx.core.content.ContextCompat
 import app.forgetit.data.TxnRepository
 import app.forgetit.domain.SmsParser
+import app.forgetit.domain.TxnFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -38,7 +39,7 @@ object SmsScanner {
                     val sender = c.getString(addrCol).orEmpty()
                     if (sender in muted) continue
                     val day = Instant.ofEpochMilli(c.getLong(dateCol)).atZone(zone).toLocalDate()
-                    val parsed = SmsParser.parse(body, day, defaultCurrency)
+                    val parsed = if (TxnFilter.accept(body, sender)) SmsParser.parse(body, day, defaultCurrency) else null
                     if (parsed != null && repo.addIfNew(parsed, "SMS", body, sender)) added++
                     onNew(body, day)
                 }

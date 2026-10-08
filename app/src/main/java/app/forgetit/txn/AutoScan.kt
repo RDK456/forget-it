@@ -2,6 +2,7 @@ package app.forgetit.txn
 
 import app.forgetit.AppContainer
 import app.forgetit.domain.SmsParser
+import app.forgetit.domain.TxnFilter
 import app.forgetit.domain.TxnMatching
 import app.forgetit.reminders.Notifications
 import kotlinx.coroutines.flow.first
@@ -16,7 +17,7 @@ object AutoScan {
         if (!s.autoScan || sender in s.mutedSenders) return false
         val today = LocalDate.now(c.clock)
         var added = false
-        SmsParser.parse(text, today, s.defaultCurrency)?.let { parsed ->
+        (if (TxnFilter.accept(text, sender)) SmsParser.parse(text, today, s.defaultCurrency) else null)?.let { parsed ->
             val p = if (parsed.merchant == null && !fallbackMerchant.isNullOrBlank()) parsed.copy(merchant = fallbackMerchant.trim().take(40)) else parsed
             added = c.txns.addIfNew(p, source, text, sender)
         }
@@ -25,6 +26,17 @@ object AutoScan {
         if (added) { markMatchedEmis(c); app.forgetit.reminders.BudgetAlerts.check(c) }
         return added
     }
+
+    /** Removes entries read from messages that are ads, forwards, reminders or personal numbers. Typed-in and edited entries stay. Returns how many went. */
+    suspend fun cleanUp(c: AppContainer): Int {
+        val junk = c.txns.observeAll().first().filter {
+            it.source in READ_SOURCES && it.category.isBlank() && it.note.isBlank() && !TxnFilter.accept(it.snippet, it.sender, strict = false)
+        }
+        junk.forEach { c.txns.delete(it.id) }
+        return junk.size
+    }
+
+    private val READ_SOURCES = setOf("SMS", "EMAIL", "GMAIL")
 
     /** Marks an EMI paid when a debit of the right amount landed near its due date. Returns how many were marked. */
     suspend fun markMatchedEmis(c: AppContainer): Int {
