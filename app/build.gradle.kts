@@ -65,7 +65,7 @@ tasks.register<JavaExec>("makeDelta") {
     classpath = deltaTool
     mainClass.set("io.sigpipe.jbsdiff.ui.CLI")
     maxHeapSize = "3g"
-    doFirst { args("diff", property("oldApk").toString(), property("newApk").toString(), property("patch").toString()) }
+    doFirst { args("diff", project.property("oldApk").toString(), project.property("newApk").toString(), project.property("patch").toString()) }
 }
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }

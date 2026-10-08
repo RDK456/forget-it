@@ -44,3 +44,10 @@ Gmail sync uses Google sign-in with the read-only Gmail scope. It needs a Google
 3. Install the app, then Settings, Auto-scan, Gmail, Sign in.
 
 Without this setup the Sign in button shows Google's error and the rest of the app is unaffected. Needs Google Play services on the phone.
+
+## Updates and releases
+
+- **In-app updates**: Settings, top card. Forget-it checks this repository's latest GitHub release once a day (switchable), shows what changed, and installs it through Android's installer. Every download is checked against the release's `SHA256SUMS`, and Android refuses an update that is not signed with the same key.
+- **Delta updates**: when a release carries a `delta-<old checksum>-to-<apk>.patch` made for the APK that is installed, only that patch is downloaded (typically under 10 percent of the APK) and applied on the phone; otherwise the whole APK for the phone's architecture is downloaded.
+- **Publishing**: bump `versionName` and `versionCode` in `app/build.gradle.kts`, then run `tools/release.sh` (needs `keystore.properties` with the signing key, and the `gh` CLI). It builds one APK per architecture plus a universal one, writes `SHA256SUMS`, adds patches from the previous release, and creates the release. Use `--dry-run` to build without publishing.
+- **Signing key**: keep `keystore.properties` and the `.jks` file safe and out of git. Updates only install over an app signed with the same key.
