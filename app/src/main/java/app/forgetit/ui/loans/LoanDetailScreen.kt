@@ -51,6 +51,7 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
     val myAdj = adj.filter { it.loanId == loanId }
     val s = Amortization.build(loan, myAdj, pay.filter { it.loanId == loanId }, today)
     val cur = loan.currency
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
     fun money(v: Long) = Money.format(v, cur)
 
     ScreenScaffold(loan.name, onBack) { pad ->
@@ -80,6 +81,7 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (loan.payUrl.startsWith("http")) OutlinedButton({ runCatching { uri.openUri(loan.payUrl) } }) { Text("Pay now") }
                     OutlinedButton({ dialog = "prepay" }) { Text("Prepay") }
                     OutlinedButton({ dialog = "balance" }) { Text("Set balance") }
                     OutlinedButton(onEdit) { Text("Edit") }

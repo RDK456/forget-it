@@ -109,6 +109,7 @@ fun billIcon(type: BillType): ImageVector = when (type) {
     BillType.INSURANCE -> Lucide.ShieldCheck
     BillType.RENT -> Lucide.House
     BillType.SCHOOL -> Lucide.GraduationCap
+    BillType.CREDIT_CARD -> Lucide.CreditCard
     BillType.OTHER -> Lucide.Receipt
 }
 
@@ -122,5 +123,6 @@ fun billTypeLabel(type: BillType): String = when (type) {
     BillType.INSURANCE -> "Insurance"
     BillType.RENT -> "Rent"
     BillType.SCHOOL -> "School fees"
+    BillType.CREDIT_CARD -> "Credit card"
     BillType.OTHER -> "Other"
 }

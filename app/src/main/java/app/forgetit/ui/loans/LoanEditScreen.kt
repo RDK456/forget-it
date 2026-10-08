@@ -60,6 +60,7 @@ fun LoanEditScreen(vm: LoanEditViewModel, onDone: () -> Unit, onSaved: (Long) ->
             Slider(f.remindDays.toFloat(), { v -> vm.update { it.copy(remindDays = v.toInt()) } }, valueRange = 0f..30f, steps = 29)
             app.forgetit.ui.edit.ExtraRemindChips(f.extraRemind) { l -> vm.update { it.copy(extraRemind = l) } }
             OutlinedTextField(f.notes, { v -> vm.update { it.copy(notes = v) } }, label = { Text("Notes (optional)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(f.payUrl, { v -> vm.update { it.copy(payUrl = v) } }, label = { Text("Pay-now link (optional, https://...)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Active (counts in totals and reminders)", Modifier.weight(1f)); Switch(f.active, { v -> vm.update { it.copy(active = v) } })
             }

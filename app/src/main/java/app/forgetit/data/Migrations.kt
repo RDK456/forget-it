@@ -79,3 +79,11 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE stock_log ADD COLUMN priceMinor INTEGER")
     }
 }
+
+/** Pay-now links on loans and bills. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE loan ADD COLUMN payUrl TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE bill ADD COLUMN payUrl TEXT NOT NULL DEFAULT ''")
+    }
+}

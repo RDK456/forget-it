@@ -22,6 +22,7 @@ export JAVA_HOME=<your jdk 17>
 
 ## Notes
 
-- Reading SMS: grant the permission in Transactions. For an app installed outside Play, Android may require App info, three-dot menu, Allow restricted settings.
+- Auto-scan: the first launch asks to read payment SMS; the switch lives in Settings and Transactions. New SMS are read as they arrive and the inbox is caught up daily. For an app installed outside Play, Android may require App info, three-dot menu, Allow restricted settings.
+- Email alerts: Settings, Auto-scan, Email, Allow notification access. Forget-it then reads new-mail notifications from Gmail, Outlook and other mail apps on the phone.
 - Emails: open the email in Gmail, Share, choose Forget-it.
 - Backups: CSV export and import for subscriptions, loans and stock; photos are not included.

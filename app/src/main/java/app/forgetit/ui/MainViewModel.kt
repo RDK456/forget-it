@@ -175,6 +175,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
 
     fun setPayday(day: Int) = viewModelScope.launch { c.settings.setPayday(day) }
     fun setWeeklyDigest(on: Boolean) = viewModelScope.launch { c.settings.setWeeklyDigest(on) }
+    fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }
     fun applyPriceChange(pc: app.forgetit.domain.PriceChange) = viewModelScope.launch {

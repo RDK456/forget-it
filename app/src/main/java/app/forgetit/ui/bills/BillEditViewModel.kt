@@ -26,6 +26,7 @@ data class BillForm(
     val extraRemind: List<Int> = emptyList(),
     val notes: String = "",
     val active: Boolean = true,
+    val payUrl: String = "",
 )
 
 class BillEditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
@@ -41,7 +42,7 @@ class BillEditViewModel(private val c: AppContainer, val id: Long) : ViewModel()
             if (id == 0L) c.photos.deleteAll(OwnerType.BILL, 0)
             val b = if (id != 0L) c.bills.getBill(id) else null
             form = if (b != null) {
-                BillForm(b.name, b.type, b.currency, b.cycle, (b.customDays ?: 30).toString(), b.anchorDate, b.remindDaysBefore, b.extraRemindDays, b.notes, b.active)
+                BillForm(b.name, b.type, b.currency, b.cycle, (b.customDays ?: 30).toString(), b.anchorDate, b.remindDaysBefore, b.extraRemindDays, b.notes, b.active, b.payUrl)
             } else BillForm(currency = c.settings.flow.first().defaultCurrency, anchor = LocalDate.now(c.clock).plusDays(7))
         }
     }
@@ -55,7 +56,7 @@ class BillEditViewModel(private val c: AppContainer, val id: Long) : ViewModel()
         val bill = Bill(
             id = id, name = f.name, type = f.type, currency = f.currency.trim().uppercase(), cycle = f.cycle,
             customDays = if (f.cycle == Cycle.CUSTOM_DAYS) days else null, anchorDate = f.anchor, remindDaysBefore = f.remindDays,
-            extraRemindDays = f.extraRemind, notes = f.notes, active = f.active,
+            extraRemindDays = f.extraRemind, notes = f.notes, active = f.active, payUrl = f.payUrl,
         )
         viewModelScope.launch {
             when (val r = c.bills.save(bill)) {

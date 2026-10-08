@@ -2,7 +2,7 @@ package app.forgetit.domain
 
 import java.time.LocalDate
 
-enum class BillType { ELECTRICITY, WATER, GAS, BROADBAND, MOBILE, DTH, INSURANCE, RENT, SCHOOL, OTHER }
+enum class BillType { ELECTRICITY, WATER, GAS, BROADBAND, MOBILE, DTH, INSURANCE, RENT, SCHOOL, CREDIT_CARD, OTHER }
 
 /** A recurring bill whose amount changes from cycle to cycle (electricity, water, mobile postpaid...). */
 data class Bill(
@@ -17,6 +17,7 @@ data class Bill(
     val extraRemindDays: List<Int> = emptyList(),
     val notes: String = "",
     val active: Boolean = true,
+    val payUrl: String = "",
 )
 
 /** One recorded bill: what it came to for the cycle due on [dueDate], and when it was paid. */

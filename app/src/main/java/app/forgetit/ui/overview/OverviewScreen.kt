@@ -2,6 +2,7 @@ package app.forgetit.ui.overview
 
 import app.forgetit.ui.relativeDayLower
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,7 @@ import app.forgetit.domain.billMonthlyOutgo
 import app.forgetit.ui.billIcon
 import app.forgetit.ui.theme.domainColors
 import app.forgetit.domain.Money
+import app.forgetit.ui.AnimatedProgress
 import app.forgetit.domain.Renewal
 import app.forgetit.domain.RowStatus
 import app.forgetit.domain.StockEngine
@@ -155,6 +157,7 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
             ListScreen(pad) {
                 item { RemyHeader(mood, greeting, message) }
                 item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, billOut.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
+                if (settings.budgetMinor > 0) item { BudgetBar(monthlyAll, settings.budgetMinor, cur) }
                 item { Text("Coming up in $UPCOMING_DAYS days", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
                 if (upcoming.isEmpty()) item { Text("Nothing due soon. Enjoy the quiet.", style = MaterialTheme.typography.bodyMedium) }
                 itemsIndexed(upcoming, key = { _, u -> u.key }) { i, u ->
@@ -184,6 +187,19 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BudgetBar(spentMinor: Long, budgetMinor: Long, currency: String) {
+    val over = spentMinor > budgetMinor
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Monthly budget", style = MaterialTheme.typography.titleMedium)
+            AnimatedProgress((spentMinor.toDouble() / budgetMinor).toFloat().coerceIn(0f, 1f))
+            if (over) Text("Over by ${Money.format(spentMinor - budgetMinor, currency)}", color = MaterialTheme.colorScheme.error)
+            else Text("${Money.format(budgetMinor - spentMinor, currency)} left of ${Money.format(budgetMinor, currency)}")
         }
     }
 }

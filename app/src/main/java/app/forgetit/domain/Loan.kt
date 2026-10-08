@@ -22,6 +22,7 @@ data class Loan(
     val extraRemindDays: List<Int> = emptyList(),
     val notes: String = "",
     val active: Boolean = true,
+    val payUrl: String = "",
 )
 
 data class LoanPayment(val id: Long = 0, val loanId: Long, val installmentNo: Int, val paidOn: LocalDate, val amountMinor: Long)

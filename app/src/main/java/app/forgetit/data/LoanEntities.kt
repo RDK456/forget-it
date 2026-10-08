@@ -28,20 +28,21 @@ data class LoanEntity(
     val notes: String,
     val active: Boolean,
     @ColumnInfo(defaultValue = "''") val extraRemind: String = "",
+    @ColumnInfo(defaultValue = "''") val payUrl: String = "",
 )
 
 fun LoanEntity.toDomain() = Loan(
     id = id, name = name, lender = lender, type = LoanType.valueOf(type), principalMinor = principalMinor, currency = currency,
     annualRatePercent = BigDecimal(annualRatePercent), tenureMonths = tenureMonths, firstEmiDate = LocalDate.ofEpochDay(firstEmiEpochDay),
     emiOverrideMinor = emiOverrideMinor, remindDaysBefore = remindDaysBefore, extraRemindDays = Offsets.parse(extraRemind),
-    notes = notes, active = active,
+    notes = notes, active = active, payUrl = payUrl,
 )
 
 fun Loan.toEntity() = LoanEntity(
     id = id, name = name.trim(), lender = lender.trim(), type = type.name, principalMinor = principalMinor, currency = currency,
     annualRatePercent = annualRatePercent.toPlainString(), tenureMonths = tenureMonths, firstEmiEpochDay = firstEmiDate.toEpochDay(),
     emiOverrideMinor = emiOverrideMinor, remindDaysBefore = remindDaysBefore, notes = notes, active = active,
-    extraRemind = Offsets.format(extraRemindDays),
+    extraRemind = Offsets.format(extraRemindDays), payUrl = payUrl.trim(),
 )
 
 @Entity(tableName = "loan_payment")

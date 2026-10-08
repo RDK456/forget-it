@@ -67,6 +67,18 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                     isError = !Money.isValidCurrency(currencyText), modifier = Modifier.fillMaxWidth(),
                 )
             }
+            item { SectionTitle("Monthly budget") }
+            item {
+                var b by rememberSaveable(s.budgetMinor) {
+                    mutableStateOf(if (s.budgetMinor > 0) java.math.BigDecimal(s.budgetMinor).movePointLeft(Money.fractionDigits(s.defaultCurrency)).toPlainString() else "")
+                }
+                val parsed = if (b.isBlank()) 0L else Money.parseMinor(b, s.defaultCurrency)
+                OutlinedTextField(
+                    b, { v -> b = v; val m = if (v.isBlank()) 0L else Money.parseMinor(v, s.defaultCurrency); if (m != null && m >= 0) vm.setBudget(m) },
+                    label = { Text("Total per month in ${s.defaultCurrency}, empty for none") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = parsed == null, modifier = Modifier.fillMaxWidth(),
+                )
+            }
             item { SectionTitle("Exchange rates") }
             item { Text("Rates convert other currencies into ${s.defaultCurrency} for totals. They are entered by hand and never fetched online.") }
             if (needed.isNotEmpty()) item { Text("Missing a rate for: ${needed.joinToString()}", color = MaterialTheme.colorScheme.error) }

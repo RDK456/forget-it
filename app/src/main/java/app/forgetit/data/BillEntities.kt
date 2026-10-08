@@ -28,18 +28,19 @@ data class BillEntity(
     @ColumnInfo(defaultValue = "''") val extraRemind: String = "",
     val notes: String,
     val active: Boolean,
+    @ColumnInfo(defaultValue = "''") val payUrl: String = "",
 )
 
 fun BillEntity.toDomain() = Bill(
     id = id, name = name, type = BillType.valueOf(type), currency = currency, cycle = Cycle.valueOf(cycle), customDays = customDays,
     anchorDate = LocalDate.ofEpochDay(anchorEpochDay), remindDaysBefore = remindDaysBefore, extraRemindDays = Offsets.parse(extraRemind),
-    notes = notes, active = active,
+    notes = notes, active = active, payUrl = payUrl,
 )
 
 fun Bill.toEntity() = BillEntity(
     id = id, name = name.trim(), type = type.name, currency = currency, cycle = cycle.name, customDays = customDays,
     anchorEpochDay = anchorDate.toEpochDay(), remindDaysBefore = remindDaysBefore, extraRemind = Offsets.format(extraRemindDays),
-    notes = notes, active = active,
+    notes = notes, active = active, payUrl = payUrl.trim(),
 )
 
 @Entity(tableName = "bill_entry")

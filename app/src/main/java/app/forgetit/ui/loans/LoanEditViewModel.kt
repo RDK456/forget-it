@@ -30,6 +30,7 @@ data class LoanForm(
     val notes: String = "",
     val active: Boolean = true,
     val extraRemind: List<Int> = emptyList(),
+    val payUrl: String = "",
 )
 
 class LoanEditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
@@ -48,7 +49,7 @@ class LoanEditViewModel(private val c: AppContainer, val id: Long) : ViewModel()
                 LoanForm(
                     l.name, l.lender, l.type, Money.toPlain(l.principalMinor, l.currency), l.currency,
                     l.annualRatePercent.toPlainString(), l.tenureMonths.toString(), l.firstEmiDate,
-                    l.emiOverrideMinor?.let { Money.toPlain(it, l.currency) }.orEmpty(), l.remindDaysBefore, l.notes, l.active, l.extraRemindDays,
+                    l.emiOverrideMinor?.let { Money.toPlain(it, l.currency) }.orEmpty(), l.remindDaysBefore, l.notes, l.active, l.extraRemindDays, l.payUrl,
                 )
             } else {
                 val today = LocalDate.now(c.clock)
@@ -77,7 +78,7 @@ class LoanEditViewModel(private val c: AppContainer, val id: Long) : ViewModel()
         return Loan(
             id = id, name = f.name, lender = f.lender, type = f.type, principalMinor = principal!!, currency = cur,
             annualRatePercent = rate!!, tenureMonths = tenure!!, firstEmiDate = f.firstEmi, emiOverrideMinor = override,
-            remindDaysBefore = f.remindDays, extraRemindDays = f.extraRemind, notes = f.notes, active = f.active,
+            remindDaysBefore = f.remindDays, extraRemindDays = f.extraRemind, notes = f.notes, active = f.active, payUrl = f.payUrl,
         )
     }
 

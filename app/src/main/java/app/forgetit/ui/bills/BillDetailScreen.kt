@@ -48,6 +48,7 @@ fun BillDetailScreen(vm: MainViewModel, billId: Long, today: LocalDate, onBack: 
     val last = BillMath.lastEntry(entries)
     val lastChange = last?.let { BillMath.changePercent(it.amountMinor, entries.filter { e -> e.dueDate != last.dueDate }) }
     val cur = bill.currency
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
 
     ScreenScaffold(bill.name, onBack) { pad ->
         ListScreen(pad) {
@@ -68,7 +69,7 @@ fun BillDetailScreen(vm: MainViewModel, billId: Long, today: LocalDate, onBack: 
                 }
             }
             item { Button({ dialog = "record" }, Modifier.fillMaxWidth()) { Text("Record the bill due $due") } }
-            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onEdit) { Text("Edit") } } }
+            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (bill.payUrl.startsWith("http")) OutlinedButton({ runCatching { uri.openUri(bill.payUrl) } }) { Text("Pay now") }; OutlinedButton(onEdit) { Text("Edit") } } }
             if (entries.isNotEmpty()) {
                 item { Text("Last bills", style = MaterialTheme.typography.titleMedium) }
                 item { BillBars(entries) }

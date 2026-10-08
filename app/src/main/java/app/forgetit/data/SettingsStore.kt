@@ -27,6 +27,7 @@ class SettingsStore(private val context: Context) {
         val payday = intPreferencesKey("payday")
         val digest = booleanPreferencesKey("weekly_digest")
         val autoScan = booleanPreferencesKey("auto_scan")
+        val budget = longPreferencesKey("budget_minor")
         val autoEmi = booleanPreferencesKey("auto_mark_emi")
         val scanPrompted = booleanPreferencesKey("scan_prompted")
         val lastScan = longPreferencesKey("last_scan_day")
@@ -43,6 +44,7 @@ class SettingsStore(private val context: Context) {
             paydayDay = (p[Keys.payday] ?: base.paydayDay).coerceIn(0, 31),
             weeklyDigest = p[Keys.digest] ?: base.weeklyDigest,
             autoScan = p[Keys.autoScan] ?: base.autoScan,
+            budgetMinor = (p[Keys.budget] ?: 0L).coerceAtLeast(0),
             autoMarkEmi = p[Keys.autoEmi] ?: base.autoMarkEmi,
             scanPrompted = p[Keys.scanPrompted] ?: base.scanPrompted,
             lastScanDay = p[Keys.lastScan] ?: base.lastScanDay,
@@ -60,6 +62,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setPayday(day: Int) = update { it[Keys.payday] = day.coerceIn(0, 31) }
     suspend fun setWeeklyDigest(on: Boolean) = update { it[Keys.digest] = on }
     suspend fun setAutoScan(on: Boolean) = update { it[Keys.autoScan] = on }
+    suspend fun setBudget(minor: Long) = update { it[Keys.budget] = minor.coerceAtLeast(0) }
     suspend fun setAutoMarkEmi(on: Boolean) = update { it[Keys.autoEmi] = on }
     suspend fun setScanPrompted(done: Boolean) = update { it[Keys.scanPrompted] = done }
     suspend fun setLastScanDay(epochDay: Long) = update { it[Keys.lastScan] = epochDay }
