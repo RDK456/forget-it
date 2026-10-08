@@ -43,7 +43,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.forgetit.AppContainer
 import app.forgetit.data.OwnerType
+import app.forgetit.ui.calendar.CalendarScreen
 import app.forgetit.ui.edit.EditScreen
+import app.forgetit.ui.insights.InsightsScreen
 import app.forgetit.ui.photos.PhotoSection
 import app.forgetit.ui.edit.EditViewModel
 import app.forgetit.ui.overview.OverviewScreen
@@ -98,8 +100,8 @@ fun ForgetItRoot(container: AppContainer) {
             composable("loans") { ComingSoon("Loans") }
             composable("stock") { ComingSoon("Stock") }
             composable("more") { MoreScreen(nav) }
-            composable("calendar") { ComingSoon("Calendar", onBack = { nav.popBackStack() }) }
-            composable("insights") { ComingSoon("Insights", onBack = { nav.popBackStack() }) }
+            composable("calendar") { CalendarScreen(vm, today, onBack = { nav.popBackStack() }) }
+            composable("insights") { InsightsScreen(vm, today, onBack = { nav.popBackStack() }) }
             composable("settings") { ComingSoon("Settings", onBack = { nav.popBackStack() }) }
             composable("edit/{id}") { e -> EditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
         }
