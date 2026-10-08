@@ -18,7 +18,8 @@ class Reminders(private val c: AppContainer) {
     private suspend fun plan(now: ZonedDateTime): List<ReminderSpec> {
         val minute = c.settings.flow.first().reminderMinuteOfDay
         val notified = c.db.reminderLogDao().allKeys().toSet()
-        return ReminderPlanner.subscriptions(c.subscriptions.getAll(), now, minute, notified)
+        return ReminderPlanner.subscriptions(c.subscriptions.getAll(), now, minute, notified) +
+            ReminderPlanner.loans(c.loans.getLoans(), c.loans.getAdjustments(), c.loans.getPayments(), now, minute, notified)
     }
 
     suspend fun sync() {

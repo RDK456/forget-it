@@ -57,4 +57,29 @@ object ReminderPlanner {
 
     /** A fired alarm may only notify if the key is still part of the current plan (not deleted, paused or done). */
     fun find(specs: List<ReminderSpec>, key: String): ReminderSpec? = specs.firstOrNull { it.key == key }
+
+    /** One pending reminder per active loan: the first unpaid installment (overdue ones included) not yet notified. */
+    fun loans(
+        loans: List<Loan>, adjustments: List<LoanAdjustment>, payments: List<LoanPayment>,
+        now: ZonedDateTime, minuteOfDay: Int, notified: Set<String>,
+    ): List<ReminderSpec> {
+        val today = now.toLocalDate()
+        val out = mutableListOf<ReminderSpec>()
+        for (loan in loans) {
+            if (!loan.active) continue
+            val summary = Amortization.build(
+                loan, adjustments.filter { it.loanId == loan.id }, payments.filter { it.loanId == loan.id }, today,
+            )
+            val row = summary.rows.filter { it.status != RowStatus.PAID }.take(4)
+                .firstOrNull { key(ReminderKind.EMI_DUE, loan.id, it.dueDate) !in notified } ?: continue
+            val overdue = row.dueDate.isBefore(today)
+            out += ReminderSpec(
+                key(ReminderKind.EMI_DUE, loan.id, row.dueDate), ReminderKind.EMI_DUE, loan.id, row.dueDate,
+                triggerFor(row.dueDate, loan.remindDaysBefore, now, minuteOfDay),
+                title = if (overdue) "EMI overdue: ${loan.name}" else "EMI due soon: ${loan.name}",
+                text = "${Money.format(row.paymentMinor, loan.currency)} due on ${row.dueDate}",
+            )
+        }
+        return out
+    }
 }

@@ -6,6 +6,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.forgetit.data.AppDatabase
+import app.forgetit.data.LoanRepository
+import app.forgetit.data.MIGRATION_1_2
 import app.forgetit.data.OwnerType
 import app.forgetit.data.PhotoRepository
 import app.forgetit.data.SettingsStore
@@ -29,10 +31,11 @@ class AppContainer(val context: Context) {
     val clock: Clock = Clock.systemDefaultZone()
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").build()
+    val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").addMigrations(MIGRATION_1_2).build()
     val settings = SettingsStore(context)
     val photos = PhotoRepository(db.photoDao(), File(context.filesDir, "photos").also { it.mkdirs() })
     val subscriptions = SubscriptionRepository(db.subscriptionDao(), photos)
+    val loans = LoanRepository(db.loanDao(), photos)
     val reminders by lazy { Reminders(this) }
 
     /** Called once from Application.onCreate: channels, housekeeping, the single sync collector, daily worker. */
@@ -45,7 +48,10 @@ class AppContainer(val context: Context) {
         }
         // Every data or reminder-time change rebuilds alarms through this one path.
         appScope.launch {
-            combine(subscriptions.observeAll(), settings.flow.map { it.reminderMinuteOfDay }.distinctUntilChanged()) { _, _ -> }
+            combine(
+                subscriptions.observeAll(), loans.observeLoans(), loans.observePayments(), loans.observeAdjustments(),
+                settings.flow.map { it.reminderMinuteOfDay }.distinctUntilChanged(),
+            ) { _, _, _, _, _ -> }
                 .collect { reminders.sync() }
         }
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
