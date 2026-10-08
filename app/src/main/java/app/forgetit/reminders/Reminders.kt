@@ -19,7 +19,8 @@ class Reminders(private val c: AppContainer) {
         val minute = c.settings.flow.first().reminderMinuteOfDay
         val notified = c.db.reminderLogDao().allKeys().toSet()
         return ReminderPlanner.subscriptions(c.subscriptions.getAll(), now, minute, notified) +
-            ReminderPlanner.loans(c.loans.getLoans(), c.loans.getAdjustments(), c.loans.getPayments(), now, minute, notified)
+            ReminderPlanner.loans(c.loans.getLoans(), c.loans.getAdjustments(), c.loans.getPayments(), now, minute, notified) +
+            ReminderPlanner.stock(c.stock.getItems(), c.stock.getBatches(), c.stock.getLogs(), now, minute, notified)
     }
 
     suspend fun sync() {
