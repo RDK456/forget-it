@@ -46,6 +46,7 @@ import app.forgetit.data.OwnerType
 import app.forgetit.ui.calendar.CalendarScreen
 import app.forgetit.ui.edit.EditScreen
 import app.forgetit.ui.insights.InsightsScreen
+import app.forgetit.ui.settings.SettingsScreen
 import app.forgetit.ui.photos.PhotoSection
 import app.forgetit.ui.edit.EditViewModel
 import app.forgetit.ui.overview.OverviewScreen
@@ -102,7 +103,7 @@ fun ForgetItRoot(container: AppContainer) {
             composable("more") { MoreScreen(nav) }
             composable("calendar") { CalendarScreen(vm, today, onBack = { nav.popBackStack() }) }
             composable("insights") { InsightsScreen(vm, today, onBack = { nav.popBackStack() }) }
-            composable("settings") { ComingSoon("Settings", onBack = { nav.popBackStack() }) }
+            composable("settings") { SettingsScreen(vm, onBack = { nav.popBackStack() }) }
             composable("edit/{id}") { e -> EditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
         }
     }
