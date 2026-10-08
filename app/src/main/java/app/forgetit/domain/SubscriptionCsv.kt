@@ -7,7 +7,7 @@ data class CsvImport<T>(val items: List<T>, val errors: List<String>)
 object SubscriptionCsv {
     val HEADER = listOf(
         "name", "amount", "currency", "cycle", "custom_days", "start_date", "category", "notes",
-        "cancel_url", "payment_method", "is_trial", "trial_ends_at", "remind_days_before", "active",
+        "cancel_url", "payment_method", "is_trial", "trial_ends_at", "remind_days_before", "active", "extra_remind",
     )
 
     fun export(subs: List<Subscription>): String = (listOf(Csv.row(HEADER)) + subs.map { s ->
@@ -15,7 +15,7 @@ object SubscriptionCsv {
             Csv.guard(s.name), Money.toPlain(s.amountMinor, s.currency), s.currency, s.cycle.name,
             s.customDays?.toString().orEmpty(), s.startDate.toString(), s.category, Csv.guard(s.notes),
             s.cancelUrl.orEmpty(), Csv.guard(s.paymentMethod), s.isTrial.toString(), s.trialEndsAt?.toString().orEmpty(),
-            s.remindDaysBefore.toString(), s.active.toString(),
+            s.remindDaysBefore.toString(), s.active.toString(), Offsets.format(s.extraRemindDays, (59).toChar()),
         ))
     }).joinToString("\r\n") + "\r\n"
 
@@ -52,6 +52,7 @@ object SubscriptionCsv {
                 cancelUrl = cell("cancel_url").ifEmpty { null }, paymentMethod = Csv.unguard(cell("payment_method")),
                 isTrial = cell("is_trial").equals("true", ignoreCase = true), trialEndsAt = trialEnds,
                 remindDaysBefore = cell("remind_days_before").toIntOrNull() ?: 2,
+                extraRemindDays = Offsets.parse(cell("extra_remind"), (59).toChar()),
                 active = !cell("active").equals("false", ignoreCase = true),
             )
             val invalid = Validator.validate(sub)

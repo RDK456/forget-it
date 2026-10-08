@@ -41,6 +41,9 @@ fun StockCsv.import(text: String): CsvImport<StockBundle> {
             name = Csv.unguard(cell(r, "name")), unit = cell(r, "unit").ifEmpty { "pcs" }, category = cell(r, "category").ifEmpty { "Other" },
             lowThresholdMilli = threshold!!, dailyUsageMilli = usage, expiryAlertDays = cell(r, "expiry_alert_days").toIntOrNull() ?: 2,
             baselineDate = baseline, notes = Csv.unguard(cell(r, "notes")), active = !cell(r, "active").equals("false", ignoreCase = true),
+            packSizeMilli = cell(r, "pack_size").takeIf { it.isNotEmpty() }?.let { Money.parseMilli(it) },
+            leadDays = cell(r, "lead_days").toIntOrNull()?.coerceIn(0, 60) ?: 0,
+            brand = Csv.unguard(cell(r, "brand")), store = Csv.unguard(cell(r, "store")),
         )
         val invalid = StockValidator.validate(item)
         if (invalid.isEmpty()) items[key] = item else errors += "Row $line: ${invalid.first().message}"
@@ -64,7 +67,7 @@ fun StockCsv.import(text: String): CsvImport<StockBundle> {
             val delta = parseSigned(cell(r, "log_delta"))
             val k = runCatching { LogKind.valueOf(cell(r, "log_kind").uppercase()) }.getOrNull()
             if (date == null || delta == null || k == null) { errors += "Row $line: invalid log"; continue }
-            logs.getOrPut(key) { mutableListOf() } += StockLog(itemId = 0, date = date, deltaMilli = delta, kind = k)
+            logs.getOrPut(key) { mutableListOf() } += StockLog(itemId = 0, date = date, deltaMilli = delta, kind = k, priceMinor = cell(r, "price_minor").toLongOrNull())
         }
     }
     return CsvImport(items.map { (key, i) -> StockBundle(i, batches[key].orEmpty(), logs[key].orEmpty()) }, errors)

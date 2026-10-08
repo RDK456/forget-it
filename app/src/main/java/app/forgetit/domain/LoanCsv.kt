@@ -10,7 +10,7 @@ object LoanCsv {
     val HEADER = listOf(
         "record_type", "loan_key", "name", "lender", "type", "principal", "currency", "rate_percent", "tenure_months",
         "first_emi_date", "emi_override", "remind_days_before", "notes", "active",
-        "installment_no", "paid_on", "amount", "adj_date", "adj_kind", "adj_amount",
+        "installment_no", "paid_on", "amount", "adj_date", "adj_kind", "adj_amount", "extra_remind",
     )
 
     private fun line(vararg pairs: Pair<String, String>): String {
@@ -28,6 +28,7 @@ object LoanCsv {
                 "rate_percent" to l.annualRatePercent.toPlainString(), "tenure_months" to l.tenureMonths.toString(),
                 "first_emi_date" to l.firstEmiDate.toString(), "emi_override" to (l.emiOverrideMinor?.let { Money.toPlain(it, l.currency) } ?: ""),
                 "remind_days_before" to l.remindDaysBefore.toString(), "notes" to Csv.guard(l.notes), "active" to l.active.toString(),
+                "extra_remind" to Offsets.format(l.extraRemindDays, (59).toChar()),
             )
             payments.filter { it.loanId == l.id }.sortedBy { it.installmentNo }.forEach { p ->
                 out += line(
@@ -85,6 +86,7 @@ object LoanCsv {
                 name = Csv.unguard(cellOf(r, "name")), lender = Csv.unguard(cellOf(r, "lender")), type = type,
                 principalMinor = principal!!, currency = cur, annualRatePercent = rate!!, tenureMonths = tenure!!,
                 firstEmiDate = first!!, emiOverrideMinor = override, remindDaysBefore = cellOf(r, "remind_days_before").toIntOrNull() ?: 2,
+                extraRemindDays = Offsets.parse(cellOf(r, "extra_remind"), (59).toChar()),
                 notes = Csv.unguard(cellOf(r, "notes")), active = !cellOf(r, "active").equals("false", ignoreCase = true),
             )
             val invalid = Amortization.validate(loan)
