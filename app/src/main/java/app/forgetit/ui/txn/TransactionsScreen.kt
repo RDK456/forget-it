@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -57,7 +57,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
     ScreenScaffold("Transactions", onBack) { pad ->
         ListScreen(pad) {
             item {
-                Card(Modifier.fillMaxWidth()) {
+                OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Bank messages", style = MaterialTheme.typography.titleMedium)
                         Text("Forget-it can read payment SMS on this phone to spot subscriptions and EMIs. Messages are read on the device only; only payments are kept, with a short snippet.", style = MaterialTheme.typography.bodySmall)
@@ -78,7 +78,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
             }
             if (suggestions.isNotEmpty()) item { Text("Looks like subscriptions", style = MaterialTheme.typography.titleMedium) }
             items(suggestions, key = { "sg${it.merchant}${it.currency}" }) { s ->
-                Card(Modifier.fillMaxWidth()) {
+                OutlinedCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(s.merchant, style = MaterialTheme.typography.titleMedium)
@@ -90,7 +90,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
             }
             items(emi, key = { "emi${it.txnId}" }) { m ->
                 val t = txns.first { it.id == m.txnId }
-                Card(Modifier.fillMaxWidth()) {
+                OutlinedCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("${Money.format(t.amountMinor, t.currency)} on ${t.date} looks like EMI ${m.installmentNo} of ${m.loanName}", Modifier.weight(1f))
                         Button({ vm.markEmiFrom(m, t) }) { Text("Mark paid") }

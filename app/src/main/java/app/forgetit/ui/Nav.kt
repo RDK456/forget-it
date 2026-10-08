@@ -1,6 +1,11 @@
 package app.forgetit.ui
 
 import android.Manifest
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,16 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.NavigationBar
@@ -67,11 +62,11 @@ import java.time.LocalDate
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val TABS = listOf(
-    Tab("overview", "Overview", Icons.Filled.Home),
-    Tab("subs", "Subs", Icons.Filled.Refresh),
-    Tab("loans", "Loans", Icons.AutoMirrored.Filled.List),
-    Tab("stock", "Stock", Icons.Filled.ShoppingCart),
-    Tab("more", "More", Icons.Filled.Menu),
+    Tab("overview", "Overview", AppIcons.Home),
+    Tab("subs", "Subs", AppIcons.Subscriptions),
+    Tab("loans", "Loans", AppIcons.Loans),
+    Tab("stock", "Stock", AppIcons.Stock),
+    Tab("more", "More", AppIcons.More),
 )
 
 @Composable
@@ -105,7 +100,13 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
             }
         },
     ) { pad ->
-        NavHost(nav, startDestination = "overview", modifier = Modifier.padding(pad)) {
+        NavHost(
+            nav, startDestination = "overview", modifier = Modifier.padding(pad),
+            enterTransition = { fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 14 } },
+            exitTransition = { fadeOut(tween(120)) },
+            popEnterTransition = { fadeIn(tween(220)) },
+            popExitTransition = { fadeOut(tween(140)) + slideOutHorizontally(tween(220)) { it / 14 } },
+        ) {
             composable("overview") { OverviewScreen(vm, today) }
             composable("subs") {
                 SubscriptionsScreen(vm, today, onAdd = { nav.navigate("edit/0") }, onOpen = { nav.navigate("edit/$it") })
@@ -139,10 +140,10 @@ private fun MoreScreen(nav: NavController) {
     ScreenScaffold("More", onBack = null) { pad ->
         androidx.compose.foundation.layout.Column(Modifier.padding(pad)) {
             listOf(
-                Triple("calendar", "Calendar", Icons.Filled.DateRange),
-                Triple("insights", "Insights", Icons.Filled.Info),
-                Triple("transactions", "Transactions", Icons.Filled.Notifications),
-                Triple("settings", "Settings", Icons.Filled.Settings),
+                Triple("calendar", "Calendar", AppIcons.Calendar),
+                Triple("insights", "Insights", AppIcons.Insights),
+                Triple("transactions", "Transactions", AppIcons.Transactions),
+                Triple("settings", "Settings", AppIcons.Settings),
             ).forEach { (r, label, icon) ->
                 ListItem(
                     headlineContent = { Text(label) },

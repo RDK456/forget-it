@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -68,7 +68,7 @@ private fun open(ctx: Context, intent: Intent) = runCatching { ctx.startActivity
 fun HealthSection(health: Health, onTest: () -> Unit) {
     val ctx = LocalContext.current
     SectionTitle("Notification health")
-    Card(Modifier.fillMaxWidth()) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 if (health.notificationsAllowed) "Notifications are allowed" else "Notifications are OFF - reminders cannot show",

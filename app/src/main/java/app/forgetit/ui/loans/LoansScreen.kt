@@ -1,5 +1,7 @@
 package app.forgetit.ui.loans
 
+import app.forgetit.ui.pressScale
+import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -49,11 +49,11 @@ fun LoansScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Loans and EMIs") }) },
-        floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(Icons.Filled.Add, "Add loan") } },
+        floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add loan") } },
     ) { pad ->
         ListScreen(pad) {
             item {
-                Card(Modifier.fillMaxWidth()) {
+                OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         Text("EMIs per month", style = MaterialTheme.typography.labelLarge)
                         Text(Money.format(outgo.monthlyMinor, settings.defaultCurrency), style = MaterialTheme.typography.headlineMedium)
@@ -65,7 +65,7 @@ fun LoansScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
             items(loans, key = { it.id }) { l ->
                 val s = Amortization.build(l, adj.filter { it.loanId == l.id }, pay.filter { it.loanId == l.id }, today)
                 val paidCount = s.rows.count { it.status == RowStatus.PAID }
-                Card(Modifier.fillMaxWidth().clickable { onOpen(l.id) }) {
+                OutlinedCard(Modifier.animateItem().fillMaxWidth().pressScale { onOpen(l.id) }) {
                     Column(Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Avatar(l.name, covers["LOAN:${l.id}"])

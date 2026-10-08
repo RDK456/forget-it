@@ -1,5 +1,6 @@
 package app.forgetit.ui.loans
 
+import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,11 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +52,7 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
     ScreenScaffold(loan.name, onBack) { pad ->
         ListScreen(pad) {
             item {
-                Card(Modifier.fillMaxWidth()) {
+                OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text("Outstanding", style = MaterialTheme.typography.labelLarge)
                         Text(money(s.outstandingMinor), style = MaterialTheme.typography.headlineMedium)
@@ -90,7 +88,7 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
                             AdjustmentKind.BALANCE_RESET -> "Balance set to"
                         }
                         Text("${a.date}  $what ${money(a.amountMinor)}", Modifier.weight(1f))
-                        IconButton({ vm.deleteAdjustment(a.id) }) { Icon(Icons.Filled.Delete, "Remove") }
+                        IconButton({ vm.deleteAdjustment(a.id) }) { Icon(AppIcons.Delete, "Remove") }
                     }
                 }
             }
@@ -109,7 +107,7 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
                         Text("${r.no}.  ${money(r.paymentMinor)}  ${if (r.status == RowStatus.PAID) "paid" else relativeDay(r.dueDate, today)}", color = color)
                         Text("${r.dueDate} - interest ${money(r.interestMinor)}, principal ${money(r.principalMinor)}", style = MaterialTheme.typography.bodySmall, color = color)
                     }
-                    if (r.status == RowStatus.PAID) Icon(Icons.Filled.Check, "Paid", tint = MaterialTheme.colorScheme.primary)
+                    if (r.status == RowStatus.PAID) Icon(AppIcons.Check, "Paid", tint = MaterialTheme.colorScheme.primary)
                 }
             }
             item { OutlinedButton({ dialog = "delete" }, Modifier.fillMaxWidth()) { Text("Delete this loan") } }

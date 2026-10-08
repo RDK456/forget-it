@@ -26,12 +26,15 @@ fun Avatar(name: String, photo: File?, modifier: Modifier = Modifier, size: Dp =
             modifier = modifier.size(size).clip(CircleShape),
         )
     } else {
-        val hue = name.lowercase().hashCode().mod(360).toFloat()
+        val tint = AVATAR_COLORS[name.lowercase().hashCode().mod(AVATAR_COLORS.size)]
         Box(
-            modifier.size(size).clip(CircleShape).background(Color.hsv(hue, 0.45f, 0.72f)),
+            modifier.size(size).clip(CircleShape).background(tint),
             contentAlignment = Alignment.Center,
         ) {
             Text(name.trim().firstOrNull()?.uppercase() ?: "?", color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
 }
+
+/** A small fixed palette in the app colours, so avatars look chosen rather than random. */
+private val AVATAR_COLORS = listOf(0xFF0B8F88, 0xFF5560E0, 0xFFB3254F, 0xFFB26B00, 0xFF2E86C1, 0xFF4F8A2B, 0xFF8E5BD0, 0xFF5E7371).map { Color(it) }

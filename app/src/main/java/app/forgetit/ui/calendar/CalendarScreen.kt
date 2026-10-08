@@ -1,5 +1,6 @@
 package app.forgetit.ui.calendar
 
+import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,10 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,16 +36,18 @@ import app.forgetit.domain.stockCalendarEntries
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
 import app.forgetit.ui.ScreenScaffold
+import app.forgetit.ui.theme.domainColors
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
 
-private fun dotColor(t: EntryType) = when (t) {
-    EntryType.SUBSCRIPTION -> Color(0xFF3D5AFE)
-    EntryType.EMI -> Color(0xFFE53935)
-    EntryType.EXPIRY -> Color(0xFFFB8C00)
+@Composable
+private fun dotColor(t: EntryType): Color = when (t) {
+    EntryType.SUBSCRIPTION -> domainColors.subscription
+    EntryType.EMI -> domainColors.loan
+    EntryType.EXPIRY -> domainColors.stock
 }
 
 @Composable
@@ -72,9 +72,9 @@ fun CalendarScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
         ListScreen(pad) {
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    IconButton({ monthIndex-- }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous month") }
+                    IconButton({ monthIndex-- }) { Icon(AppIcons.Previous, "Previous month") }
                     Text("${month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${month.year}", style = MaterialTheme.typography.titleLarge)
-                    IconButton({ monthIndex++ }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next month") }
+                    IconButton({ monthIndex++ }) { Icon(AppIcons.Next, "Next month") }
                 }
             }
             item {
@@ -105,7 +105,7 @@ fun CalendarScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
                 val day = entries[sel].orEmpty()
                 if (day.isEmpty()) item { Text("Nothing on this day.", style = MaterialTheme.typography.bodyMedium) }
                 for (e in day) item(key = "${e.date}${e.title}") {
-                    Card(Modifier.fillMaxWidth()) {
+                    OutlinedCard(Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(10.dp).clip(CircleShape).background(dotColor(e.type)))
                             Column(Modifier.padding(start = 12.dp)) {

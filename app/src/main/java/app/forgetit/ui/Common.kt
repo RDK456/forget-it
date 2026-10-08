@@ -1,5 +1,15 @@
 package app.forgetit.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,9 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,7 +69,7 @@ fun ScreenScaffold(title: String, onBack: (() -> Unit)?, content: @Composable (P
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(AppIcons.Back, contentDescription = "Back")
                         }
                     }
                 },
@@ -83,7 +91,7 @@ fun ListScreen(pad: PaddingValues, content: LazyListScope.() -> Unit) {
 
 @Composable
 fun TotalsCard(label: String, totals: Totals, currency: String, modifier: Modifier = Modifier) {
-    Card(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    OutlinedCard(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp)) {
             Text(label, style = MaterialTheme.typography.labelLarge)
             Text(Money.format(totals.monthlyMinor, currency), style = MaterialTheme.typography.headlineMedium)
@@ -96,4 +104,13 @@ fun TotalsCard(label: String, totals: Totals, currency: String, modifier: Modifi
             }
         }
     }
+}
+
+/** Cards that dip slightly under the finger, so a tap feels acknowledged before the screen changes. */
+fun Modifier.pressScale(onClick: () -> Unit): Modifier = composed {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, spring(stiffness = 700f), label = "press")
+    this.graphicsLayer { scaleX = scale; scaleY = scale }
+        .clickable(interactionSource = source, indication = LocalIndication.current, onClick = onClick)
 }

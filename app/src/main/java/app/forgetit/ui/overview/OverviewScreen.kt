@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +30,7 @@ import app.forgetit.ui.Avatar
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
 import app.forgetit.ui.ScreenScaffold
-import app.forgetit.ui.TotalsCard
+import app.forgetit.ui.OutgoHero
 import app.forgetit.ui.relativeDay
 import java.io.File
 import java.time.LocalDate
@@ -96,11 +96,11 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
 
     ScreenScaffold("Overview", onBack = null) { pad ->
         ListScreen(pad) {
-            item { TotalsCard("Monthly outgo (subscriptions + EMIs)", totals, cur) }
+            item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
             item { Text("Coming up in $UPCOMING_DAYS days", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
             if (upcoming.isEmpty()) item { Text("Nothing due soon.", style = MaterialTheme.typography.bodyMedium) }
             items(upcoming, key = { it.key }) { u ->
-                Card(Modifier.fillMaxWidth()) {
+                OutlinedCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Avatar(u.title, u.photo)
                         Spacer(Modifier.width(12.dp))

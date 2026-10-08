@@ -1,5 +1,7 @@
 package app.forgetit.ui.subscriptions
 
+import app.forgetit.ui.pressScale
+import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,10 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -42,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.CATEGORIES
@@ -89,7 +89,7 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Subscriptions") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAdd) { Icon(Icons.Filled.Add, contentDescription = "Add subscription") }
+            FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, contentDescription = "Add subscription") }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { pad ->
@@ -97,7 +97,7 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
             item { TotalsCard("Subscriptions per month", totals, settings.defaultCurrency) }
             item {
                 OutlinedTextField(
-                    value = query, onValueChange = { query = it }, label = { Text("Search") },
+                    value = query, onValueChange = { query = it }, label = { Text("Search") }, leadingIcon = { Icon(AppIcons.Search, contentDescription = null) }, shape = MaterialTheme.shapes.large,
                     singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -119,10 +119,10 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
                     if (v == SwipeToDismissBoxValue.EndToStart) { delete(s); true } else false
                 })
                 SwipeToDismissBox(
-                    state = state, enableDismissFromStartToEnd = false,
+                    state = state, modifier = Modifier.animateItem(), enableDismissFromStartToEnd = false,
                     backgroundContent = {
-                        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(16.dp), contentAlignment = Alignment.CenterEnd) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                        Box(Modifier.fillMaxSize().then(if (state.dismissDirection == SwipeToDismissBoxValue.EndToStart) Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.errorContainer) else Modifier).padding(16.dp), contentAlignment = Alignment.CenterEnd) {
+                            Icon(AppIcons.Delete, contentDescription = "Delete")
                         }
                     },
                 ) { SubscriptionRow(s, today, covers["SUBSCRIPTION:${s.id}"]) { onOpen(s.id) } }
@@ -134,7 +134,7 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
 @Composable
 private fun SubscriptionRow(s: Subscription, today: LocalDate, cover: java.io.File?, onClick: () -> Unit) {
     val next = Renewal.next(s, today)
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    OutlinedCard(Modifier.fillMaxWidth().pressScale(onClick)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(s.name, cover)
             Spacer(Modifier.width(12.dp))

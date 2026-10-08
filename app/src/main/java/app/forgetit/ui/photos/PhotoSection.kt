@@ -1,5 +1,6 @@
 package app.forgetit.ui.photos
 
+import app.forgetit.ui.AppIcons
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -17,9 +18,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -120,9 +118,9 @@ private fun PhotoViewer(photos: List<PhotoEntity>, start: Int, repo: PhotoReposi
             }
             Row(Modifier.align(Alignment.TopEnd)) {
                 IconButton(onClick = { scope.launch { repo.delete(photos[pager.currentPage].id) } }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete photo", tint = Color.White)
+                    Icon(AppIcons.Delete, contentDescription = "Delete photo", tint = Color.White)
                 }
-                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.White) }
+                IconButton(onClick = onClose) { Icon(AppIcons.Close, contentDescription = "Close", tint = Color.White) }
             }
         }
     }

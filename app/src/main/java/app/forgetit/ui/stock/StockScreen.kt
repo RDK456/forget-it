@@ -1,5 +1,7 @@
 package app.forgetit.ui.stock
 
+import app.forgetit.ui.pressScale
+import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,7 +54,7 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Household stock") }) },
-        floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(Icons.Filled.Add, "Add item") } },
+        floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add item") } },
     ) { pad ->
         ListScreen(pad) {
             if (items.isEmpty()) item { Text("No items yet. Tap + to add milk, rice or anything you run out of.") }
@@ -70,7 +70,7 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
 
 @Composable
 private fun StockCard(i: StockItem, s: StockStatus, today: LocalDate, cover: java.io.File?, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    OutlinedCard(Modifier.fillMaxWidth().pressScale(onClick)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(i.name, cover)
             Spacer(Modifier.width(12.dp))

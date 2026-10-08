@@ -1,12 +1,11 @@
 package app.forgetit.ui.settings
 
+import app.forgetit.ui.AppIcons
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,7 +72,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
             for ((code, r) in s.rates) item(key = "rate$code") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("1 $code = ${r.value.toPlainString()} ${s.defaultCurrency}  (set ${r.editedOn})", Modifier.weight(1f))
-                    IconButton({ vm.removeRate(code) }) { Icon(Icons.Filled.Delete, "Remove rate for $code") }
+                    IconButton({ vm.removeRate(code) }) { Icon(AppIcons.Delete, "Remove rate for $code") }
                 }
             }
             item {
