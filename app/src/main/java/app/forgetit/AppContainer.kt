@@ -29,6 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Clock
@@ -61,6 +62,7 @@ class AppContainer(val context: Context) {
             photos.deleteAll(OwnerType.SUBSCRIPTION, 0)
         }
         appScope.launch { app.forgetit.txn.AutoScan.scanDue(this@AppContainer) }
+        appScope.launch { if (settings.flow.first().autoScan) app.forgetit.gmail.GmailScanner.sync(this@AppContainer) }
         // Every data or reminder-time change rebuilds alarms through this one path.
         appScope.launch {
             combine(

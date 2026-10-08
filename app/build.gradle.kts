@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.glance.material3)
     implementation(libs.biometric)
     implementation(libs.coil.compose)
+    implementation(libs.play.services.auth)
     implementation(libs.lucide)
 
     testImplementation(libs.junit)

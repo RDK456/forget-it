@@ -5,7 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings as AndroidSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import app.forgetit.gmail.GmailAuth
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -104,6 +108,7 @@ fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit)
                 }
                 OutlinedButton({ openMailAccessSettings(ctx) }) { Text(if (mail) "Manage" else "Allow") }
             }
+            GmailRow(vm, s, ctx, onMessage)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Mark an EMI paid when a matching payment is found", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                 Switch(s.autoMarkEmi, vm::setAutoMarkEmi)
@@ -141,4 +146,52 @@ fun ScanSetupDialog(vm: MainViewModel, onDone: () -> Unit) {
         confirmButton = { TextButton({ vm.markScanPrompted(); ask.launch(SMS_PERMISSIONS) }) { Text("Turn on") } },
         dismissButton = { TextButton({ vm.markScanPrompted(); onDone() }) { Text("Not now") } },
     )
+}
+
+private fun gmailMessage(n: Int) = when {
+    n == app.forgetit.gmail.GmailScanner.NOT_SIGNED_IN -> "Gmail is not connected"
+    n < 0 -> "Could not reach Gmail. Check your connection and the Google setup in the README."
+    n == 0 -> "Gmail checked. Nothing new found."
+    else -> "$n new payment(s) found in Gmail"
+}
+
+@Composable
+private fun GmailRow(vm: MainViewModel, s: Settings, ctx: Context, onMessage: (String) -> Unit) {
+    val scope = rememberCoroutineScope()
+    fun connected(email: String?) {
+        vm.connectGmail(email ?: "connected")
+        vm.syncGmail { onMessage(gmailMessage(it)) }
+    }
+    val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { res ->
+        val data = res.data ?: return@rememberLauncherForActivityResult
+        when (val r = GmailAuth.fromIntent(ctx, data)) {
+            is GmailAuth.Result.Token -> connected(r.email)
+            is GmailAuth.Result.Failed -> onMessage(r.message)
+            else -> {}
+        }
+    }
+    fun connect() = scope.launch {
+        when (val r = GmailAuth.authorize(ctx)) {
+            is GmailAuth.Result.NeedsConsent -> consent.launch(IntentSenderRequest.Builder(r.intent).build())
+            is GmailAuth.Result.Token -> connected(r.email)
+            is GmailAuth.Result.Failed -> onMessage(r.message)
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Gmail", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    if (s.gmailEmail.isEmpty()) "Sign in with Google to read receipts and payment emails. Read-only, and only payments are kept."
+                    else "Connected" + if (s.gmailEmail != "connected") " as ${s.gmailEmail}" else "",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (s.gmailEmail.isEmpty()) Button({ connect() }) { Text("Sign in") }
+        }
+        if (s.gmailEmail.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton({ vm.syncGmail { onMessage(gmailMessage(it)) } }) { Text("Sync Gmail") }
+            TextButton({ vm.disconnectGmail() }) { Text("Disconnect") }
+        }
+    }
 }

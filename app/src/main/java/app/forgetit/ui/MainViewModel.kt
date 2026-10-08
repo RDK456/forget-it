@@ -180,6 +180,9 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         c.txns.ignoreSender(sender)
     }
     fun unmuteSender(sender: String) = viewModelScope.launch { c.settings.setMuted(settings.value.mutedSenders - sender) }
+    fun connectGmail(email: String) = viewModelScope.launch { c.settings.setGmailEmail(email) }
+    fun disconnectGmail() = viewModelScope.launch { c.settings.setGmailEmail("") }
+    fun syncGmail(onDone: (Int) -> Unit) = viewModelScope.launch { onDone(app.forgetit.gmail.GmailScanner.sync(c)) }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }
