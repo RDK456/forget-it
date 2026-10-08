@@ -21,6 +21,7 @@ object Notifications {
     const val CH_EXPIRY = "expiry"
     const val CH_BILLS = "bills"
     const val CH_DIGEST = "digest"
+    const val CH_FOUND = "found"
 
     private val CHANNELS = listOf(
         Triple(CH_RENEWALS, "Renewals", NotificationManager.IMPORTANCE_DEFAULT),
@@ -30,6 +31,7 @@ object Notifications {
         Triple(CH_EXPIRY, "Expiry", NotificationManager.IMPORTANCE_HIGH),
         Triple(CH_BILLS, "Bills and utilities", NotificationManager.IMPORTANCE_HIGH),
         Triple(CH_DIGEST, "Weekly summary", NotificationManager.IMPORTANCE_LOW),
+        Triple(CH_FOUND, "New payments found", NotificationManager.IMPORTANCE_LOW),
     )
 
     val channelIds get() = CHANNELS.map { it.first }
@@ -86,5 +88,21 @@ object Notifications {
         } catch (e: SecurityException) {
             false
         }
+    }
+
+    /** Quiet note after a background scan found new payments to review. */
+    @SuppressLint("MissingPermission")
+    fun showFound(context: Context, count: Int) {
+        val nm = NotificationManagerCompat.from(context)
+        if (!nm.areNotificationsEnabled()) return
+        val open = PendingIntent.getActivity(
+            context, 1,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val text = if (count == 1) "1 new payment found. Open Transactions to review." else "$count new payments found. Open Transactions to review."
+        val n = NotificationCompat.Builder(context, CH_FOUND).setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle("Forget-it scanned your messages").setContentText(text).setContentIntent(open).setAutoCancel(true).build()
+        try { nm.notify(7001, n) } catch (_: SecurityException) {}
     }
 }

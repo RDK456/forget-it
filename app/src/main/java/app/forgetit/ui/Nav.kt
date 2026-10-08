@@ -25,6 +25,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -81,6 +83,9 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
     val route = nav.currentBackStackEntryAsState().value?.destination?.route
     val today = LocalDate.now(container.clock)
     androidx.compose.runtime.LaunchedEffect(sharedText) { if (sharedText != null) nav.navigate("share") }
+    var askScan by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { askScan = !container.settings.flow.first().scanPrompted }
+    if (askScan) app.forgetit.ui.txn.ScanSetupDialog(vm) { askScan = false }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.forgetit.domain.Rate
@@ -25,6 +26,9 @@ class SettingsStore(private val context: Context) {
         val biometric = booleanPreferencesKey("biometric_lock")
         val payday = intPreferencesKey("payday")
         val digest = booleanPreferencesKey("weekly_digest")
+        val autoScan = booleanPreferencesKey("auto_scan")
+        val scanPrompted = booleanPreferencesKey("scan_prompted")
+        val lastScan = longPreferencesKey("last_scan_day")
     }
 
     val flow: Flow<Settings> = context.dataStore.data.map { p ->
@@ -37,6 +41,9 @@ class SettingsStore(private val context: Context) {
             biometricLock = p[Keys.biometric] ?: base.biometricLock,
             paydayDay = (p[Keys.payday] ?: base.paydayDay).coerceIn(0, 31),
             weeklyDigest = p[Keys.digest] ?: base.weeklyDigest,
+            autoScan = p[Keys.autoScan] ?: base.autoScan,
+            scanPrompted = p[Keys.scanPrompted] ?: base.scanPrompted,
+            lastScanDay = p[Keys.lastScan] ?: base.lastScanDay,
         )
     }
 
@@ -50,6 +57,9 @@ class SettingsStore(private val context: Context) {
     suspend fun setBiometric(on: Boolean) = update { it[Keys.biometric] = on }
     suspend fun setPayday(day: Int) = update { it[Keys.payday] = day.coerceIn(0, 31) }
     suspend fun setWeeklyDigest(on: Boolean) = update { it[Keys.digest] = on }
+    suspend fun setAutoScan(on: Boolean) = update { it[Keys.autoScan] = on }
+    suspend fun setScanPrompted(done: Boolean) = update { it[Keys.scanPrompted] = done }
+    suspend fun setLastScanDay(epochDay: Long) = update { it[Keys.lastScan] = epochDay }
 
     suspend fun setRate(currency: String, value: BigDecimal, today: LocalDate) = update {
         val rates = RateCodec.decode(it[Keys.rates].orEmpty()) + (currency to Rate(value, today))

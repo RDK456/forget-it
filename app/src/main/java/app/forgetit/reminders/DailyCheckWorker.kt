@@ -12,6 +12,7 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
         val c = (applicationContext as ForgetItApp).container
         c.subscriptions.settleTrials(LocalDate.now(c.clock))
         c.photos.sweepOrphans()
+        app.forgetit.txn.AutoScan.scanDue(c, notify = true)
         c.reminders.sync()
         return Result.success()
     }

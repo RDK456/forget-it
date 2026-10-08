@@ -58,6 +58,7 @@ class AppContainer(val context: Context) {
             photos.sweepOrphans()
             photos.deleteAll(OwnerType.SUBSCRIPTION, 0)
         }
+        appScope.launch { app.forgetit.txn.AutoScan.scanDue(this@AppContainer) }
         // Every data or reminder-time change rebuilds alarms through this one path.
         appScope.launch {
             combine(

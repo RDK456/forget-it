@@ -18,7 +18,7 @@ data class ParsedTxn(
 object SmsParser {
     private val IC = RegexOption.IGNORE_CASE
     private val OTP = Regex("""\b(otp|one[- ]time|verification code|passcode|cvv)\b""", IC)
-    private val DEBIT = Regex("""\b(debited|debit|spent|purchase|purchased|paid|payment of|withdrawn|sent|charged|deducted)\b""", IC)
+    private val DEBIT = Regex("""\b(debited|debit|spent|purchase|purchased|paid|payment of|withdrawn|sent|charged|deducted|billed|renewed|auto-renewed)\b""", IC)
     private val CREDIT = Regex("""\b(credited|credit|received|refund|refunded|deposited)\b""", IC)
     private val CUR = listOf("rs[.]?", "inr", "usd", "eur", "gbp", "aed", "[$]").joinToString("|") + "|" +
         listOf(0x20B9, 0x20AC, 0xA3).joinToString("|") { String(Character.toChars(it)) }

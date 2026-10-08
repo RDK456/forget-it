@@ -43,10 +43,9 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
     val pay by vm.loanPayments.collectAsStateWithLifecycle()
     val adj by vm.loanAdjustments.collectAsStateWithLifecycle()
     val ctx = LocalContext.current
-    var granted by remember { mutableStateOf(SmsScanner.hasPermission(ctx)) }
+    val settings by vm.settings.collectAsStateWithLifecycle()
     var message by remember { mutableStateOf<String?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
-    val askSms = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted = SmsScanner.hasPermission(ctx) }
 
     val live = txns.filter { it.status != "IGNORED" }
     val month = YearMonth.from(today)
@@ -56,22 +55,8 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
 
     ScreenScaffold("Transactions", onBack) { pad ->
         ListScreen(pad) {
-            item {
-                OutlinedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Bank messages", style = MaterialTheme.typography.titleMedium)
-                        Text("Forget-it can read payment SMS on this phone to spot subscriptions and EMIs. Messages are read on the device only; only payments are kept, with a short snippet.", style = MaterialTheme.typography.bodySmall)
-                        if (!granted) {
-                            Button({ askSms.launch(arrayOf(android.Manifest.permission.READ_SMS, android.Manifest.permission.RECEIVE_SMS)) }) { Text("Allow reading SMS") }
-                            Text("If Android blocks this for an app installed outside Play: App info, three-dot menu, Allow restricted settings.", style = MaterialTheme.typography.bodySmall)
-                        } else {
-                            Button({ vm.scanSms(90) { n -> message = if (n < 0) "SMS permission is missing" else "$n new transaction(s) found" } }) { Text("Scan last 90 days") }
-                        }
-                        message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                        Text("Emails: open a purchase email in Gmail, tap Share, and choose Forget-it.", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
+            item { AutoScanSection(vm, settings) { message = it } }
+            message?.let { m -> item { Text(m, style = MaterialTheme.typography.bodySmall) } }
             val spent = thisMonth.filter { it.direction == TxnDirection.DEBIT }.groupBy { it.currency }.mapValues { e -> e.value.sumOf { it.amountMinor } }
             if (spent.isNotEmpty()) item {
                 Text("Spent this month: " + spent.entries.joinToString(", ") { Money.format(it.value, it.key) }, style = MaterialTheme.typography.titleMedium)

@@ -54,4 +54,10 @@ class SmsParserTest {
         val t = SmsParser.parse("Payment of 250 charged at Cafe Coffee", day, "EUR")
         assertNull(t)
     }
+
+    @Test fun emailRenewalNotificationIsRead() {
+        val t = parse("Netflix. Your membership was renewed. $15.49 billed to your card ending 4455.")!!
+        assertEquals(TxnDirection.DEBIT, t.direction)
+        assertEquals(1549L, t.amountMinor)
+    }
 }

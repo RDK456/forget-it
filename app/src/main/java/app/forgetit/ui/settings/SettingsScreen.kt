@@ -3,6 +3,7 @@ package app.forgetit.ui.settings
 import app.forgetit.ui.AppIcons
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
@@ -89,6 +90,8 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                     ) { Text("Add") }
                 }
             }
+            item { SectionTitle("Auto-scan messages") }
+            item { var m by remember { mutableStateOf<String?>(null) }; Column { app.forgetit.ui.txn.AutoScanSection(vm, s) { m = it }; m?.let { Text(it, style = MaterialTheme.typography.bodySmall) } } }
             item { SectionTitle("Reminder time") }
             item {
                 val m = s.reminderMinuteOfDay

@@ -14,6 +14,9 @@ data class Settings(
     val biometricLock: Boolean = false,
     val paydayDay: Int = 0,
     val weeklyDigest: Boolean = true,
+    val autoScan: Boolean = true,
+    val scanPrompted: Boolean = false,
+    val lastScanDay: Long = 0,
 )
 
 fun currencyFromLocale(): String =

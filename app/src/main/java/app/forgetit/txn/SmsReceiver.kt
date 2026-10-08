@@ -5,10 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import app.forgetit.ForgetItApp
-import app.forgetit.domain.SmsParser
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 /** Parses each incoming SMS on the phone. Messages that are not payments are dropped and never stored. */
 class SmsReceiver : BroadcastReceiver() {
@@ -21,8 +18,7 @@ class SmsReceiver : BroadcastReceiver() {
         val pending = goAsync()
         c.appScope.launch {
             try {
-                val currency = c.settings.flow.first().defaultCurrency
-                SmsParser.parse(body, LocalDate.now(c.clock), currency)?.let { c.txns.addIfNew(it, "SMS", body) }
+                AutoScan.ingest(c, body, "SMS")
             } finally { pending.finish() }
         }
     }
