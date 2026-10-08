@@ -51,6 +51,10 @@ import app.forgetit.ui.loans.LoanEditScreen
 import app.forgetit.ui.loans.LoanEditViewModel
 import app.forgetit.ui.loans.LoansScreen
 import app.forgetit.ui.settings.SettingsScreen
+import app.forgetit.ui.stock.StockDetailScreen
+import app.forgetit.ui.stock.StockEditScreen
+import app.forgetit.ui.stock.StockEditViewModel
+import app.forgetit.ui.stock.StockScreen
 import app.forgetit.ui.photos.PhotoSection
 import app.forgetit.ui.edit.EditViewModel
 import app.forgetit.ui.overview.OverviewScreen
@@ -105,7 +109,9 @@ fun ForgetItRoot(container: AppContainer) {
             composable("loans") { LoansScreen(vm, today, onAdd = { nav.navigate("loanedit/0") }, onOpen = { nav.navigate("loan/$it") }) }
             composable("loan/{id}") { e -> LoanRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, vm, today, container, nav) }
             composable("loanedit/{id}") { e -> LoanEditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
-            composable("stock") { ComingSoon("Stock") }
+            composable("stock") { StockScreen(vm, today, onAdd = { nav.navigate("stockedit/0") }, onOpen = { nav.navigate("stockitem/$it") }) }
+            composable("stockitem/{id}") { e -> StockRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, vm, today, container, nav) }
+            composable("stockedit/{id}") { e -> StockEditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
             composable("more") { MoreScreen(nav) }
             composable("calendar") { CalendarScreen(vm, today, onBack = { nav.popBackStack() }) }
             composable("insights") { InsightsScreen(vm, today, onBack = { nav.popBackStack() }) }
@@ -184,5 +190,23 @@ private fun LoanEditRoute(id: Long, container: AppContainer, nav: NavController)
     LoanEditScreen(
         evm, onDone = { nav.popBackStack() }, onSaved = { ask(); nav.popBackStack() },
         photos = { PhotoSection(container.photos, OwnerType.LOAN, id) },
+    )
+}
+
+@Composable
+private fun StockRoute(id: Long, vm: MainViewModel, today: LocalDate, container: AppContainer, nav: NavController) {
+    StockDetailScreen(
+        vm, id, today, onBack = { nav.popBackStack() }, onEdit = { nav.navigate("stockedit/$id") },
+        photos = { PhotoSection(container.photos, OwnerType.STOCK_ITEM, id) },
+    )
+}
+
+@Composable
+private fun StockEditRoute(id: Long, container: AppContainer, nav: NavController) {
+    val evm: StockEditViewModel = viewModel(key = "stockedit$id", factory = viewModelFactory { initializer { StockEditViewModel(container, id) } })
+    val ask = rememberNotificationAsker()
+    StockEditScreen(
+        evm, onDone = { nav.popBackStack() }, onSaved = { ask(); nav.popBackStack() },
+        photos = { PhotoSection(container.photos, OwnerType.STOCK_ITEM, id) },
     )
 }

@@ -76,4 +76,19 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     fun addAdjustment(a: app.forgetit.domain.LoanAdjustment) = viewModelScope.launch { c.loans.addAdjustment(a) }
 
     fun deleteAdjustment(id: Long) = viewModelScope.launch { c.loans.deleteAdjustment(id) }
+
+    val stockItems = c.stock.observeItems().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val stockBatches = c.stock.observeBatches().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val stockLogs = c.stock.observeLogs().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun deleteStockItem(id: Long) = viewModelScope.launch { c.stock.delete(id) }
+
+    fun restock(itemId: Long, qtyMilli: Long, expiry: java.time.LocalDate?) =
+        viewModelScope.launch { c.stock.restock(itemId, qtyMilli, expiry, java.time.LocalDate.now(c.clock)) }
+
+    fun useStock(itemId: Long, qtyMilli: Long, onResult: (app.forgetit.domain.UseResult) -> Unit) = viewModelScope.launch {
+        onResult(c.stock.use(itemId, qtyMilli, java.time.LocalDate.now(c.clock)))
+    }
+
+    fun discardBatch(batchId: Long) = viewModelScope.launch { c.stock.discard(batchId, java.time.LocalDate.now(c.clock)) }
 }
