@@ -175,6 +175,11 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
 
     fun setPayday(day: Int) = viewModelScope.launch { c.settings.setPayday(day) }
     fun setWeeklyDigest(on: Boolean) = viewModelScope.launch { c.settings.setWeeklyDigest(on) }
+    fun muteSender(sender: String) = viewModelScope.launch {
+        c.settings.setMuted(settings.value.mutedSenders + sender)
+        c.txns.ignoreSender(sender)
+    }
+    fun unmuteSender(sender: String) = viewModelScope.launch { c.settings.setMuted(settings.value.mutedSenders - sender) }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }

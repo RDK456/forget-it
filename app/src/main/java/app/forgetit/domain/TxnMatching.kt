@@ -15,6 +15,7 @@ data class Txn(
     val source: String = "SMS",
     val status: String = "NEW",
     val snippet: String = "",
+    val sender: String = "",
 )
 
 data class RecurringSuggestion(val merchant: String, val amountMinor: Long, val currency: String, val cycle: Cycle, val lastDate: LocalDate, val count: Int)

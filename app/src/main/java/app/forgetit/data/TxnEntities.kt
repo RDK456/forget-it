@@ -1,5 +1,6 @@
 package app.forgetit.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.Index
@@ -25,10 +26,11 @@ data class TxnEntity(
     val status: String,
     val snippet: String,
     val dedupe: String,
+    @ColumnInfo(defaultValue = "''") val sender: String = "",
 )
 
 fun TxnEntity.toDomain() = Txn(
-    id, TxnDirection.valueOf(direction), amountMinor, currency, merchant, accountHint, LocalDate.ofEpochDay(epochDay), source, status, snippet,
+    id, TxnDirection.valueOf(direction), amountMinor, currency, merchant, accountHint, LocalDate.ofEpochDay(epochDay), source, status, snippet, sender,
 )
 
 @Dao
@@ -37,6 +39,7 @@ interface TxnDao {
     @Query("SELECT * FROM txn") suspend fun getAll(): List<TxnEntity>
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(e: TxnEntity): Long
     @Query("UPDATE txn SET status = :status WHERE id = :id") suspend fun setStatus(id: Long, status: String)
+    @Query("UPDATE txn SET status = 'IGNORED' WHERE sender = :sender") suspend fun ignoreSender(sender: String)
     @Query("DELETE FROM txn WHERE id = :id") suspend fun delete(id: Long)
     @Query("DELETE FROM txn") suspend fun deleteAll()
 }

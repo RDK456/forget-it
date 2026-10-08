@@ -18,7 +18,7 @@ class SmsReceiver : BroadcastReceiver() {
         val pending = goAsync()
         c.appScope.launch {
             try {
-                AutoScan.ingest(c, body, "SMS")
+                AutoScan.ingest(c, body, "SMS", sender = messages.firstOrNull()?.originatingAddress.orEmpty())
             } finally { pending.finish() }
         }
     }

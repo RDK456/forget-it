@@ -87,3 +87,10 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("ALTER TABLE bill ADD COLUMN payUrl TEXT NOT NULL DEFAULT ''")
     }
 }
+
+/** Which sender a payment message came from, so a noisy sender can be muted. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE txn ADD COLUMN sender TEXT NOT NULL DEFAULT ''")
+    }
+}

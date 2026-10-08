@@ -20,23 +20,26 @@ object SmsScanner {
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
 
     /** Reads the SMS inbox on this phone, keeps only payments. Returns the number of new transactions, or -1 without permission. */
-    suspend fun scanInbox(context: Context, repo: TxnRepository, since: LocalDate, defaultCurrency: String, zone: ZoneId): Int =
+    suspend fun scanInbox(context: Context, repo: TxnRepository, since: LocalDate, defaultCurrency: String, zone: ZoneId, muted: Set<String> = emptySet()): Int =
         withContext(Dispatchers.IO) {
             if (!hasPermission(context)) return@withContext -1
             val sinceMs = since.atStartOfDay(zone).toInstant().toEpochMilli()
             var added = 0
             var seen = 0
             context.contentResolver.query(
-                Telephony.Sms.Inbox.CONTENT_URI, arrayOf(Telephony.Sms.BODY, Telephony.Sms.DATE),
+                Telephony.Sms.Inbox.CONTENT_URI, arrayOf(Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.ADDRESS),
                 "${Telephony.Sms.DATE} >= ?", arrayOf(sinceMs.toString()), "${Telephony.Sms.DATE} DESC",
             )?.use { c ->
                 val bodyCol = c.getColumnIndexOrThrow(Telephony.Sms.BODY)
                 val dateCol = c.getColumnIndexOrThrow(Telephony.Sms.DATE)
+                val addrCol = c.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
                 while (c.moveToNext() && seen++ < MAX_MESSAGES) {
                     val body = c.getString(bodyCol) ?: continue
+                    val sender = c.getString(addrCol).orEmpty()
+                    if (sender in muted) continue
                     val day = Instant.ofEpochMilli(c.getLong(dateCol)).atZone(zone).toLocalDate()
                     val parsed = SmsParser.parse(body, day, defaultCurrency) ?: continue
-                    if (repo.addIfNew(parsed, "SMS", body)) added++
+                    if (repo.addIfNew(parsed, "SMS", body, sender)) added++
                 }
             }
             added

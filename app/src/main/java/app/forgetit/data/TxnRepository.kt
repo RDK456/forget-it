@@ -13,18 +13,19 @@ class TxnRepository(private val dao: TxnDao) {
         MessageDigest.getInstance("SHA-256").digest("$source|$day|$body".toByteArray()).joinToString("") { "%02x".format(it) }
 
     /** Stores a parsed payment unless the same message was already stored. Only a short snippet of the text is kept. */
-    suspend fun addIfNew(p: ParsedTxn, source: String, body: String): Boolean {
+    suspend fun addIfNew(p: ParsedTxn, source: String, body: String, sender: String = ""): Boolean {
         val snippet = body.replace(Regex("""\s+"""), " ").trim().take(160)
         val id = dao.insert(
             TxnEntity(
                 direction = p.direction.name, amountMinor = p.amountMinor, currency = p.currency, merchant = p.merchant,
                 accountHint = p.accountHint, epochDay = p.date.toEpochDay(), source = source, status = "NEW", snippet = snippet,
-                dedupe = hash(source, p.date.toEpochDay(), body),
+                dedupe = hash(source, p.date.toEpochDay(), body), sender = sender.take(40),
             ),
         )
         return id != -1L
     }
 
+    suspend fun ignoreSender(sender: String) = dao.ignoreSender(sender)
     suspend fun setStatus(id: Long, status: String) = dao.setStatus(id, status)
     suspend fun delete(id: Long) = dao.delete(id)
     suspend fun deleteAll() = dao.deleteAll()

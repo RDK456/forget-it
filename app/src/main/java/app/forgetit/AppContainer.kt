@@ -13,6 +13,7 @@ import app.forgetit.data.BillRepository
 import app.forgetit.data.MIGRATION_3_4
 import app.forgetit.data.MIGRATION_4_5
 import app.forgetit.data.MIGRATION_5_6
+import app.forgetit.data.MIGRATION_6_7
 import app.forgetit.data.TxnRepository
 import app.forgetit.data.StockRepository
 import app.forgetit.data.OwnerType
@@ -41,7 +42,7 @@ class AppContainer(val context: Context) {
     /** Incremented to fire the app-wide confetti overlay. */
     val confetti = kotlinx.coroutines.flow.MutableStateFlow(0)
 
-    val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
+    val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build()
     val settings = SettingsStore(context)
     val photos = PhotoRepository(db.photoDao(), File(context.filesDir, "photos").also { it.mkdirs() })
     val subscriptions = SubscriptionRepository(db.subscriptionDao(), photos)

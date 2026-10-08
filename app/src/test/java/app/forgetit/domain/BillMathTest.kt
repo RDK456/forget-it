@@ -55,9 +55,19 @@ class BillMathTest {
 class BillAheadTest {
     private val bill = Bill(id = 1, name = "Power", currency = "USD", anchorDate = d("2026-10-15"))
     private fun paid(due: String) = BillEntry(billId = 1, dueDate = d(due), amountMinor = 100, paidOn = d("2026-10-01"))
+    private fun ent(due: String, amount: Long) = BillEntry(billId = 1, dueDate = d(due), amountMinor = amount, paidOn = d(due))
 
     @Test fun keepsLookingPastCyclesThatArePaidInAdvance() {
         val entries = listOf(paid("2026-10-15"), paid("2026-11-15"), paid("2026-12-15"))
         assertEquals(d("2027-01-15"), BillMath.pendingDue(bill, entries, d("2026-10-08")))
+    }
+
+    @Test fun seasonalBaselineUsesTheSameMonthOfEarlierYears() {
+        val h = listOf(ent("2025-07-10", 20000), ent("2026-01-10", 5000), ent("2026-02-10", 5000), ent("2026-03-10", 5000))
+        assertEquals(20000L, BillMath.seasonalAverage(h, d("2026-07-10")))
+        assertNull(BillMath.seasonalAverage(h, d("2026-05-10")))
+        // 21000 is high against the 6.3k overall average but normal for July.
+        assertTrue(BillMath.isHigh(21000, h))
+        assertFalse(BillMath.isHigh(21000, h, d("2026-07-10")))
     }
 }

@@ -33,7 +33,7 @@ fun RecordBillDialog(
     var text by remember { mutableStateOf("") }
     var paid by remember { mutableStateOf(true) }
     val minor = Money.parseMinor(text, currency)
-    val change = minor?.let { BillMath.changePercent(it, earlier) }
+    val change = minor?.let { BillMath.changePercent(it, earlier, due) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Record the bill due $due") },

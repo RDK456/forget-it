@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.forgetit.domain.Rate
@@ -27,6 +28,7 @@ class SettingsStore(private val context: Context) {
         val payday = intPreferencesKey("payday")
         val digest = booleanPreferencesKey("weekly_digest")
         val autoScan = booleanPreferencesKey("auto_scan")
+        val muted = stringSetPreferencesKey("muted_senders")
         val budget = longPreferencesKey("budget_minor")
         val autoEmi = booleanPreferencesKey("auto_mark_emi")
         val scanPrompted = booleanPreferencesKey("scan_prompted")
@@ -44,6 +46,7 @@ class SettingsStore(private val context: Context) {
             paydayDay = (p[Keys.payday] ?: base.paydayDay).coerceIn(0, 31),
             weeklyDigest = p[Keys.digest] ?: base.weeklyDigest,
             autoScan = p[Keys.autoScan] ?: base.autoScan,
+            mutedSenders = p[Keys.muted] ?: emptySet(),
             budgetMinor = (p[Keys.budget] ?: 0L).coerceAtLeast(0),
             autoMarkEmi = p[Keys.autoEmi] ?: base.autoMarkEmi,
             scanPrompted = p[Keys.scanPrompted] ?: base.scanPrompted,
@@ -62,6 +65,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setPayday(day: Int) = update { it[Keys.payday] = day.coerceIn(0, 31) }
     suspend fun setWeeklyDigest(on: Boolean) = update { it[Keys.digest] = on }
     suspend fun setAutoScan(on: Boolean) = update { it[Keys.autoScan] = on }
+    suspend fun setMuted(senders: Set<String>) = update { it[Keys.muted] = senders }
     suspend fun setBudget(minor: Long) = update { it[Keys.budget] = minor.coerceAtLeast(0) }
     suspend fun setAutoMarkEmi(on: Boolean) = update { it[Keys.autoEmi] = on }
     suspend fun setScanPrompted(done: Boolean) = update { it[Keys.scanPrompted] = done }

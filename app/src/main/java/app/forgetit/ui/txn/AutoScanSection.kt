@@ -108,6 +108,15 @@ fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit)
                 Text("Mark an EMI paid when a matching payment is found", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                 Switch(s.autoMarkEmi, vm::setAutoMarkEmi)
             }
+            if (s.mutedSenders.isNotEmpty()) {
+                Text("Muted senders", style = MaterialTheme.typography.titleSmall)
+                s.mutedSenders.sorted().forEach { m ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(m, Modifier.weight(1f))
+                        TextButton({ vm.unmuteSender(m) }) { Text("Unmute") }
+                    }
+                }
+            }
             if (sms) OutlinedButton({ vm.scanNow { onMessage(scanMessage(it)) } }, Modifier.fillMaxWidth()) { Text("Scan now") }
             Text("Emails can also be shared: open one, tap Share, choose Forget-it.", style = MaterialTheme.typography.bodySmall)
         }

@@ -11,12 +11,12 @@ import java.time.ZoneId
 /** One entry point for every automatic read: live SMS, email notifications, and the periodic inbox catch-up. */
 object AutoScan {
     /** Parses one message. Returns true when it was a new payment. Does nothing when auto-scan is off. */
-    suspend fun ingest(c: AppContainer, text: String, source: String, fallbackMerchant: String? = null): Boolean {
+    suspend fun ingest(c: AppContainer, text: String, source: String, fallbackMerchant: String? = null, sender: String = ""): Boolean {
         val s = c.settings.flow.first()
-        if (!s.autoScan) return false
+        if (!s.autoScan || sender in s.mutedSenders) return false
         var p = SmsParser.parse(text, LocalDate.now(c.clock), s.defaultCurrency) ?: return false
         if (p.merchant == null && !fallbackMerchant.isNullOrBlank()) p = p.copy(merchant = fallbackMerchant.trim().take(40))
-        val added = c.txns.addIfNew(p, source, text)
+        val added = c.txns.addIfNew(p, source, text, sender)
         if (added) markMatchedEmis(c)
         return added
     }
@@ -44,7 +44,7 @@ object AutoScan {
         if (!SmsScanner.hasPermission(c.context)) return -1
         val today = LocalDate.now(c.clock)
         val days = if (s.lastScanDay == 0L) 90L else (today.toEpochDay() - s.lastScanDay + 1).coerceIn(2, 90)
-        val n = SmsScanner.scanInbox(c.context, c.txns, today.minusDays(days), s.defaultCurrency, ZoneId.systemDefault())
+        val n = SmsScanner.scanInbox(c.context, c.txns, today.minusDays(days), s.defaultCurrency, ZoneId.systemDefault(), s.mutedSenders)
         if (n >= 0) c.settings.setLastScanDay(today.toEpochDay())
         if (n > 0) markMatchedEmis(c)
         if (n > 0 && notify) Notifications.showFound(c.context, n)

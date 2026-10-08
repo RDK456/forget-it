@@ -56,15 +56,25 @@ object BillMath {
 
     fun lastEntry(entries: List<BillEntry>): BillEntry? = entries.maxByOrNull { it.dueDate }
 
-    /** How much higher (positive) or lower a new amount is than the average of the earlier bills; null with too little history. */
-    fun changePercent(newAmount: Long, earlier: List<BillEntry>): Int? {
+    /** Average of the bills that fell in the same calendar month in earlier years (air conditioning in July, heating in January). */
+    fun seasonalAverage(entries: List<BillEntry>, due: LocalDate): Long? {
+        val same = entries.filter { it.dueDate.month == due.month && it.dueDate.year < due.year }
+        if (same.isEmpty()) return null
+        return Cost.round(BigDecimal(same.sumOf { it.amountMinor }).divide(BigDecimal(same.size), Cost.MC))
+    }
+
+    /**
+     * How much higher (positive) or lower a new amount is than expected; null with too little history.
+     * With [due] given, the same month of earlier years is the baseline when it exists, so a summer peak is not flagged as a surprise.
+     */
+    fun changePercent(newAmount: Long, earlier: List<BillEntry>, due: LocalDate? = null): Int? {
         if (earlier.size < MIN_HISTORY) return null
-        val avg = average(earlier) ?: return null
+        val avg = (due?.let { seasonalAverage(earlier, it) } ?: average(earlier)) ?: return null
         if (avg <= 0) return null
         return Math.round((newAmount - avg) * 100.0 / avg).toInt()
     }
 
-    fun isHigh(newAmount: Long, earlier: List<BillEntry>): Boolean = (changePercent(newAmount, earlier) ?: 0) >= HIGH_PERCENT
+    fun isHigh(newAmount: Long, earlier: List<BillEntry>, due: LocalDate? = null): Boolean = (changePercent(newAmount, earlier, due) ?: 0) >= HIGH_PERCENT
 
     /** Average amount per month, from the recent bills and the cycle length; null until a bill is recorded. */
     fun monthlyEquivalentMinor(b: Bill, entries: List<BillEntry>): Long? {

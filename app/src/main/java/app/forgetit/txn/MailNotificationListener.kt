@@ -19,7 +19,7 @@ class MailNotificationListener : NotificationListenerService() {
         val body = (x.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: x.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty()
         if (body.isBlank() && title.isBlank()) return
         val c = (applicationContext as ForgetItApp).container
-        c.appScope.launch { AutoScan.ingest(c, "$title. $body", "EMAIL", title) }
+        c.appScope.launch { AutoScan.ingest(c, "$title. $body", "EMAIL", title, sender = title) }
     }
 
     companion object {

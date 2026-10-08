@@ -105,7 +105,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(t.merchant ?: "Unknown", style = MaterialTheme.typography.titleSmall)
-                        Text("${t.date}  ${t.snippet.take(70)}", style = MaterialTheme.typography.bodySmall)
+                        Text("${t.date}  ${if (t.sender.isNotBlank()) t.sender + ": " else ""}${t.snippet.take(70)}", style = MaterialTheme.typography.bodySmall)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         val sign = if (t.direction == TxnDirection.DEBIT) "-" else "+"
@@ -115,6 +115,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
                             else if (t.direction == TxnDirection.DEBIT) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
                         )
                         TextButton({ vm.setTxnStatus(t.id, if (ignored) "NEW" else "IGNORED") }) { Text(if (ignored) "Restore" else "Ignore") }
+                        if (t.sender.isNotBlank() && t.sender !in settings.mutedSenders) TextButton({ vm.muteSender(t.sender) }) { Text("Mute sender") }
                     }
                 }
             }

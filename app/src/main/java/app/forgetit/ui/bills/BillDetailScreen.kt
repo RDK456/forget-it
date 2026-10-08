@@ -46,7 +46,7 @@ fun BillDetailScreen(vm: MainViewModel, billId: Long, today: LocalDate, onBack: 
     val due = BillMath.pendingDue(bill, entries, today) ?: BillMath.recentAndNext(bill, today).last()
     val usual = BillMath.average(entries)
     val last = BillMath.lastEntry(entries)
-    val lastChange = last?.let { BillMath.changePercent(it.amountMinor, entries.filter { e -> e.dueDate != last.dueDate }) }
+    val lastChange = last?.let { BillMath.changePercent(it.amountMinor, entries.filter { e -> e.dueDate != last.dueDate }, last.dueDate) }
     val cur = bill.currency
     val uri = androidx.compose.ui.platform.LocalUriHandler.current
 
@@ -62,6 +62,7 @@ fun BillDetailScreen(vm: MainViewModel, billId: Long, today: LocalDate, onBack: 
                             (if (due.isBefore(today)) "Overdue since " else "Next due ") + relativeDayLower(due, today) + " ($due)",
                             color = if (due.isBefore(today)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                         )
+                        BillMath.seasonalAverage(entries, due)?.let { Text("Around this time last year: " + Money.format(it, cur), style = MaterialTheme.typography.labelLarge) }
                         if (lastChange != null && lastChange >= BillMath.HIGH_PERCENT) {
                             Text("Last bill was $lastChange% higher than usual.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
                         }

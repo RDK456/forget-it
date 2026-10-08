@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase
         StockItemEntity::class, StockBatchEntity::class, StockLogEntity::class,
         TxnEntity::class, BillEntity::class, BillEntryEntity::class, SnoozeEntity::class,
     ],
-    version = 6,
+    version = 7,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun subscriptionDao(): SubscriptionDao

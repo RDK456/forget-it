@@ -15,6 +15,7 @@ data class Settings(
     val paydayDay: Int = 0,
     val weeklyDigest: Boolean = true,
     val autoScan: Boolean = true,
+    val mutedSenders: Set<String> = emptySet(),
     val budgetMinor: Long = 0,
     val autoMarkEmi: Boolean = true,
     val scanPrompted: Boolean = false,
