@@ -82,4 +82,48 @@ object ReminderPlanner {
         }
         return out
     }
+
+    /**
+     * Low stock: one reminder per episode (an episode starts at the last stock action, so it is keyed by the baseline date).
+     * Expiry: one reminder per batch that still has quantity, [StockItem.expiryAlertDays] before it expires.
+     */
+    fun stock(
+        items: List<StockItem>, batches: List<StockBatch>, logs: List<StockLog>,
+        now: ZonedDateTime, minuteOfDay: Int, notified: Set<String>,
+    ): List<ReminderSpec> {
+        val today = now.toLocalDate()
+        val out = mutableListOf<ReminderSpec>()
+        for (item in items) {
+            if (!item.active) continue
+            val mine = batches.filter { it.itemId == item.id }
+            val myLogs = logs.filter { it.itemId == item.id }
+            val st = StockEngine.status(item, mine, myLogs, today)
+
+            val lowKey = key(ReminderKind.LOW_STOCK, item.id, item.baselineDate)
+            val hasHistory = mine.isNotEmpty() || myLogs.isNotEmpty()
+            if (hasHistory && lowKey !in notified) {
+                val crossing = if (st.low) today else StockEngine.crossesThresholdOn(item, st.storedMilli, st.ratePerDayMilli)
+                if (crossing != null) {
+                    val left = "${Money.milliToPlain(st.estimatedMilli)} ${item.unit} left" + (st.runOut?.let { ", runs out about $it" } ?: "")
+                    out += ReminderSpec(
+                        lowKey, ReminderKind.LOW_STOCK, item.id, crossing,
+                        if (st.low) now.plusMinutes(1) else triggerFor(crossing, 0, now, minuteOfDay),
+                        "Running low: ${item.name}", left,
+                    )
+                }
+            }
+            for (b in mine) {
+                val expiry = b.expiry ?: continue
+                if (b.quantityMilli <= 0) continue
+                val k = key(ReminderKind.EXPIRY, b.id, expiry)
+                if (k in notified) continue
+                out += ReminderSpec(
+                    k, ReminderKind.EXPIRY, b.id, expiry, triggerFor(expiry, item.expiryAlertDays, now, minuteOfDay),
+                    if (expiry.isBefore(today)) "Expired: ${item.name}" else "${item.name} expires soon",
+                    "${Money.milliToPlain(b.quantityMilli)} ${item.unit} expires on $expiry",
+                )
+            }
+        }
+        return out
+    }
 }
