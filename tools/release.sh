@@ -7,6 +7,7 @@ shopt -s nullglob
 REPO="RDK456/forget-it"
 VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
 OUT="build/release/$VERSION"
+ROOT="$(pwd)"; command -v cygpath >/dev/null 2>&1 && ROOT="$(cygpath -m "$ROOT")"
 rm -rf "$OUT" && mkdir -p "$OUT"
 
 ./gradlew assembleRelease
@@ -20,13 +21,12 @@ PREV=$(gh release list --repo "$REPO" --limit 1 --json tagName --jq '.[0].tagNam
 if [ -n "${PREV:-}" ] && [ "$PREV" != "v$VERSION" ]; then
   mkdir -p "$OUT/prev"
   gh release download "$PREV" --repo "$REPO" --pattern '*.apk' --dir "$OUT/prev"
-  for old in "$OUT"/prev/*.apk; do
-    abi=$(basename "$old" .apk | sed -E 's/^forget-it-[^-]+(-[^-]+)?-//')
+  for abi in arm64-v8a armeabi-v7a x86_64; do   # the universal APK is too large to diff comfortably; it is downloaded whole
+    old=$(ls "$OUT"/prev/*-"$abi".apk 2>/dev/null | head -1 || true)
     new="$OUT/forget-it-$VERSION-$abi.apk"
-    [ -f "$new" ] || continue
-    [ "$abi" = "universal" ] && continue   # the universal APK is too large to diff comfortably; it is downloaded whole
+    [ -n "$old" ] && [ -f "$new" ] || continue
     sha12=$(sha256sum "$old" | cut -c1-12)
-    ./gradlew :app:makeDelta -q -PoldApk="$(pwd)/$old" -PnewApk="$(pwd)/$new" -Ppatch="$(pwd)/$OUT/delta-$sha12-to-$(basename "$new").patch"
+    ./gradlew :app:makeDelta -q -PoldApk="$ROOT/$old" -PnewApk="$ROOT/$new" -Ppatch="$ROOT/$OUT/delta-$sha12-to-$(basename "$new").patch"
   done
   rm -rf "$OUT/prev"
 fi
