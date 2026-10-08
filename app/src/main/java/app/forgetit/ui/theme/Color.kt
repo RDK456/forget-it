@@ -41,7 +41,7 @@ val DarkColors: ColorScheme = darkColorScheme(
 )
 
 /** One colour per tracker, used for calendar dots, the outgo bar and chart slices. */
-data class DomainColors(val subscription: Color, val loan: Color, val stock: Color)
+data class DomainColors(val subscription: Color, val loan: Color, val stock: Color, val bill: Color)
 
-val LightDomain = DomainColors(Color(0xFF0B8F88), Color(0xFF5560E0), Color(0xFFD98E04))
-val DarkDomain = DomainColors(Color(0xFF4FD1C5), Color(0xFF9AA3FF), Color(0xFFF2BE5B))
+val LightDomain = DomainColors(Color(0xFF0B8F88), Color(0xFF5560E0), Color(0xFFD98E04), Color(0xFF2E86C1))
+val DarkDomain = DomainColors(Color(0xFF4FD1C5), Color(0xFF9AA3FF), Color(0xFFF2BE5B), Color(0xFF6FB6E8))

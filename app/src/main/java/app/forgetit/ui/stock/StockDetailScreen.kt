@@ -24,6 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.LogKind
 import app.forgetit.domain.Money
 import app.forgetit.domain.StockEngine
+import app.forgetit.domain.StockPrices
+import androidx.compose.material3.FilledTonalButton
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
 import app.forgetit.ui.ScreenScaffold
@@ -45,6 +47,7 @@ fun StockDetailScreen(vm: MainViewModel, itemId: Long, today: LocalDate, onBack:
     val logs = allLogs.filter { it.itemId == itemId }.sortedByDescending { it.date }
     val s = StockEngine.status(item, batches, logs, today)
     val u = item.unit
+    val currency = vm.settings.value.defaultCurrency
 
     ScreenScaffold(item.name, onBack) { pad ->
         ListScreen(pad) {
@@ -68,6 +71,17 @@ fun StockDetailScreen(vm: MainViewModel, itemId: Long, today: LocalDate, onBack:
                     OutlinedButton(onEdit) { Text("Edit") }
                 }
             }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton({ vm.useStock(itemId, 1000) { r -> message = if (r.shortfallMilli > 0) "Only ${qty(r.consumedMilli, u)} was available." else null } }) { Text("Used one") }
+                    FilledTonalButton({ vm.finishStock(itemId) { message = null } }) { Text("Finished") }
+                }
+            }
+            val facts = listOfNotNull(
+                item.store.takeIf { it.isNotBlank() }?.let { "Store: $it" }, item.brand.takeIf { it.isNotBlank() }?.let { "Brand: $it" },
+                item.packSizeMilli?.let { "Pack: ${qty(it, u)}" }, item.leadDays.takeIf { it > 0 }?.let { "Lead time: $it day(s)" },
+            )
+            if (facts.isNotEmpty()) item { Text(facts.joinToString("  -  "), style = MaterialTheme.typography.bodySmall) }
             message?.let { m -> item { Text(m, color = MaterialTheme.colorScheme.error) } }
             item { photos() }
             item { Text("Batches", style = MaterialTheme.typography.titleMedium) }
@@ -86,6 +100,20 @@ fun StockDetailScreen(vm: MainViewModel, itemId: Long, today: LocalDate, onBack:
                     TextButton({ vm.discardBatch(b.id) }) { Text(if (expired) "Throw away" else "Discard") }
                 }
             }
+            val prices = StockPrices.history(logs)
+            if (prices.isNotEmpty()) {
+                item { Text("Prices paid", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
+                val trend = StockPrices.trendPercent(prices)
+                if (trend != null) item {
+                    Text(
+                        if (trend > 0) "Up $trend% since the last purchase" else if (trend < 0) "Down ${-trend}% since the last purchase" else "Same as the last purchase",
+                        color = if (trend > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    )
+                }
+                items(prices.reversed().take(5), key = { "p${it.date}${it.priceMinor}" }) { p ->
+                    Text("${p.date}  ${Money.format(p.priceMinor, currency)}", style = MaterialTheme.typography.bodySmall)
+                }
+            }
             if (logs.isNotEmpty()) item { Text("Recent activity", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
             items(logs.take(10), key = { "l${it.id}" }) { l ->
                 val what = when (l.kind) { LogKind.USED -> "Used"; LogKind.RESTOCK -> "Restocked"; LogKind.DISCARD -> "Discarded"; LogKind.ADJUST -> "Adjusted" }
@@ -95,11 +123,11 @@ fun StockDetailScreen(vm: MainViewModel, itemId: Long, today: LocalDate, onBack:
         }
     }
     when (dialog) {
-        "use" -> QuantityDialog("How much did you use?", u, false, today, { q, _ ->
+        "use" -> QuantityDialog("How much did you use?", u, false, today, currency, { q, _, _ ->
             vm.useStock(itemId, q) { r -> message = if (r.shortfallMilli > 0) "Only ${qty(r.consumedMilli, u)} was available in unexpired batches." else null }
             dialog = null
         }, { dialog = null })
-        "restock" -> QuantityDialog("Restock", u, true, today, { q, e -> vm.restock(itemId, q, e); dialog = null }, { dialog = null })
+        "restock" -> QuantityDialog("Restock", u, true, today, currency, { q, e, p -> vm.restock(itemId, q, e, p); dialog = null }, { dialog = null })
         "delete" -> ConfirmDialog("Delete item?", "This removes the item, its batches, history and photos.", "Delete", { vm.deleteStockItem(itemId); dialog = null; onBack() }, { dialog = null })
     }
 }

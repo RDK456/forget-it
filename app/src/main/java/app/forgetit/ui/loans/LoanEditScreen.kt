@@ -58,6 +58,7 @@ fun LoanEditScreen(vm: LoanEditViewModel, onDone: () -> Unit, onSaved: (Long) ->
             field("EMI from your lender (optional, overrides the estimate)", f.emiOverride, "emi", KeyboardType.Decimal) { v -> vm.update { it.copy(emiOverride = v) } }()
             Text("Remind me ${f.remindDays} day(s) before each EMI", style = MaterialTheme.typography.labelLarge)
             Slider(f.remindDays.toFloat(), { v -> vm.update { it.copy(remindDays = v.toInt()) } }, valueRange = 0f..30f, steps = 29)
+            app.forgetit.ui.edit.ExtraRemindChips(f.extraRemind) { l -> vm.update { it.copy(extraRemind = l) } }
             OutlinedTextField(f.notes, { v -> vm.update { it.copy(notes = v) } }, label = { Text("Notes (optional)") }, modifier = Modifier.fillMaxWidth())
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Active (counts in totals and reminders)", Modifier.weight(1f)); Switch(f.active, { v -> vm.update { it.copy(active = v) } })

@@ -54,6 +54,11 @@ fun StockEditScreen(vm: StockEditViewModel, onDone: () -> Unit, onSaved: (Long) 
             Dropdown("Category", f.category, STOCK_CATEGORIES, { it }) { c -> vm.update { it.copy(category = c) } }
             num("Warn me when ${f.unit} left is at or below", f.threshold, "threshold") { v -> vm.update { it.copy(threshold = v) } }
             num("Usage per day (optional, else learned from your usage)", f.usage, "usage") { v -> vm.update { it.copy(usage = v) } }
+            OutlinedTextField(f.store, { v -> vm.update { it.copy(store = v) } }, label = { Text("Usual store (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(f.brand, { v -> vm.update { it.copy(brand = v) } }, label = { Text("Preferred brand (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            num("Pack size in ${f.unit} (optional, shopping list rounds up to whole packs)", f.pack, "pack") { v -> vm.update { it.copy(pack = v) } }
+            Text("Delivery or refill lead time: ${f.leadDays} day(s)", style = MaterialTheme.typography.labelLarge)
+            Slider(f.leadDays.toFloat(), { v -> vm.update { it.copy(leadDays = v.toInt()) } }, valueRange = 0f..14f, steps = 13)
             Text("Expiry reminder ${f.expiryAlertDays} day(s) before", style = MaterialTheme.typography.labelLarge)
             Slider(f.expiryAlertDays.toFloat(), { v -> vm.update { it.copy(expiryAlertDays = v.toInt()) } }, valueRange = 0f..30f, steps = 29)
             if (vm.id == 0L) {

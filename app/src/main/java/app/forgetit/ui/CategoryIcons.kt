@@ -30,6 +30,15 @@ import com.composables.icons.lucide.User
 import com.composables.icons.lucide.Wheat
 import com.composables.icons.lucide.Zap
 import com.composables.icons.lucide.Apple
+import com.composables.icons.lucide.PawPrint
+import com.composables.icons.lucide.Pill
+import com.composables.icons.lucide.Receipt
+import com.composables.icons.lucide.ShieldCheck
+import com.composables.icons.lucide.Smartphone
+import com.composables.icons.lucide.Tv
+import com.composables.icons.lucide.Waves
+import com.composables.icons.lucide.Wifi
+import app.forgetit.domain.BillType
 
 /** Each category gets its own icon and colour, so a list can be scanned by shape and colour before reading. */
 fun categoryIcon(category: String): ImageVector = when (category) {
@@ -46,6 +55,9 @@ fun categoryIcon(category: String): ImageVector = when (category) {
     "Grocery" -> Lucide.Wheat
     "Household" -> Lucide.SprayCan
     "Toiletries" -> Lucide.Droplets
+    "Medicines" -> Lucide.Pill
+    "Gas and water" -> Lucide.Waves
+    "Pet" -> Lucide.PawPrint
     else -> Lucide.Tag
 }
 
@@ -63,6 +75,9 @@ fun categoryColor(category: String): Color = when (category) {
     "Grocery" -> Color(0xFFB26B00)
     "Household" -> Color(0xFF8E5BD0)
     "Toiletries" -> Color(0xFF0B8F88)
+    "Medicines" -> Color(0xFFB3254F)
+    "Gas and water" -> Color(0xFF2E86C1)
+    "Pet" -> Color(0xFF8E5BD0)
     else -> Color(0xFF5E7371)
 }
 
@@ -82,4 +97,30 @@ object FunIcons {
     val Piggy: ImageVector get() = Lucide.PiggyBank
     val Share: ImageVector get() = Lucide.Share2
     val Warning: ImageVector get() = Lucide.TriangleAlert
+}
+
+fun billIcon(type: BillType): ImageVector = when (type) {
+    BillType.ELECTRICITY -> Lucide.Zap
+    BillType.WATER -> Lucide.Droplets
+    BillType.GAS -> Lucide.Flame
+    BillType.BROADBAND -> Lucide.Wifi
+    BillType.MOBILE -> Lucide.Smartphone
+    BillType.DTH -> Lucide.Tv
+    BillType.INSURANCE -> Lucide.ShieldCheck
+    BillType.RENT -> Lucide.House
+    BillType.SCHOOL -> Lucide.GraduationCap
+    BillType.OTHER -> Lucide.Receipt
+}
+
+fun billTypeLabel(type: BillType): String = when (type) {
+    BillType.ELECTRICITY -> "Electricity"
+    BillType.WATER -> "Water"
+    BillType.GAS -> "Gas"
+    BillType.BROADBAND -> "Broadband"
+    BillType.MOBILE -> "Mobile"
+    BillType.DTH -> "DTH or cable"
+    BillType.INSURANCE -> "Insurance"
+    BillType.RENT -> "Rent"
+    BillType.SCHOOL -> "School fees"
+    BillType.OTHER -> "Other"
 }

@@ -84,8 +84,8 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
 
     fun deleteStockItem(id: Long) = viewModelScope.launch { c.stock.delete(id) }
 
-    fun restock(itemId: Long, qtyMilli: Long, expiry: java.time.LocalDate?) =
-        viewModelScope.launch { c.stock.restock(itemId, qtyMilli, expiry, java.time.LocalDate.now(c.clock)) }
+    fun restock(itemId: Long, qtyMilli: Long, expiry: java.time.LocalDate?, priceMinor: Long? = null) =
+        viewModelScope.launch { c.stock.restock(itemId, qtyMilli, expiry, java.time.LocalDate.now(c.clock), priceMinor) }
 
     fun useStock(itemId: Long, qtyMilli: Long, onResult: (app.forgetit.domain.UseResult) -> Unit) = viewModelScope.launch {
         onResult(c.stock.use(itemId, qtyMilli, java.time.LocalDate.now(c.clock)))
@@ -171,5 +171,12 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         val r = app.forgetit.domain.StockCsv.import(text)
         r.items.forEach { c.stock.importBundle(it) }
         summary(r.items.size, r.errors)
+    }
+
+    fun setPayday(day: Int) = viewModelScope.launch { c.settings.setPayday(day) }
+    fun setWeeklyDigest(on: Boolean) = viewModelScope.launch { c.settings.setWeeklyDigest(on) }
+
+    fun finishStock(itemId: Long, onResult: (app.forgetit.domain.UseResult) -> Unit) = viewModelScope.launch {
+        onResult(c.stock.finish(itemId, java.time.LocalDate.now(c.clock)))
     }
 }

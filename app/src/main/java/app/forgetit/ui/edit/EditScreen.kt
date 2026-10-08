@@ -94,6 +94,7 @@ fun EditScreen(vm: EditViewModel, onDone: () -> Unit, onSaved: () -> Unit = onDo
             }
             Text("Remind me ${f.remindDays} day(s) before", style = MaterialTheme.typography.labelLarge)
             Slider(f.remindDays.toFloat(), { v -> vm.update { it.copy(remindDays = v.toInt()) } }, valueRange = 0f..30f, steps = 29)
+            ExtraRemindChips(f.extraRemind) { l -> vm.update { it.copy(extraRemind = l) } }
 
             OutlinedTextField(
                 f.cancelUrl, { v -> vm.update { it.copy(cancelUrl = v) } }, label = { Text("Cancel or account page (optional)") },

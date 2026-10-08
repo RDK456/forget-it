@@ -94,6 +94,15 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                 val m = s.reminderMinuteOfDay
                 OutlinedButton({ timeDialog = true }, Modifier.fillMaxWidth()) { Text("Remind me at %02d:%02d".format(m / 60, m % 60)) }
             }
+            item { SectionTitle("Payday and weekly summary") }
+            item {
+                app.forgetit.ui.edit.Dropdown("Payday (snooze a reminder until then)", s.paydayDay, (0..31).toList(), { if (it == 0) "Not set" else "Day $it of the month" }) { vm.setPayday(it) }
+            }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Weekly summary every Monday", Modifier.weight(1f)); androidx.compose.material3.Switch(s.weeklyDigest, vm::setWeeklyDigest)
+                }
+            }
             item { ThemeSection(s.theme, vm::setTheme) }
             item { LockSection(s.biometricLock, vm::setBiometric) }
             item { HealthSection(health, onTest = { vm.c.reminders.sendTest() }) }

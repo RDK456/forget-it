@@ -25,6 +25,10 @@ data class StockForm(
     val startQty: String = "",
     val hasExpiry: Boolean = false,
     val startExpiry: LocalDate = LocalDate.now().plusDays(7),
+    val pack: String = "",
+    val leadDays: Int = 0,
+    val brand: String = "",
+    val store: String = "",
 )
 
 class StockEditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
@@ -45,6 +49,7 @@ class StockEditViewModel(private val c: AppContainer, val id: Long) : ViewModel(
                 StockForm(
                     e.name, e.unit, e.category, Money.milliToPlain(e.lowThresholdMilli), e.dailyUsageMilli?.let(Money::milliToPlain).orEmpty(),
                     e.expiryAlertDays, e.notes, e.active,
+                    pack = e.packSizeMilli?.let(Money::milliToPlain).orEmpty(), leadDays = e.leadDays, brand = e.brand, store = e.store,
                 )
             } else StockForm(startExpiry = LocalDate.now(c.clock).plusDays(7))
         }
@@ -59,6 +64,8 @@ class StockEditViewModel(private val c: AppContainer, val id: Long) : ViewModel(
         if (threshold == null) local["threshold"] = "Enter an amount like 0.5"
         val usage = if (f.usage.isBlank()) null else Money.parseMilli(f.usage)
         if (f.usage.isNotBlank() && usage == null) local["usage"] = "Enter an amount like 0.25"
+        val packMilli = if (f.pack.isBlank()) null else Money.parseMilli(f.pack)
+        if (f.pack.isNotBlank() && (packMilli == null || packMilli <= 0)) local["pack"] = "Enter a pack size like 5"
         val start = if (f.startQty.isBlank()) null else Money.parseMilli(f.startQty)
         if (f.startQty.isNotBlank() && start == null) local["startQty"] = "Enter an amount like 2"
         errors = local
@@ -68,7 +75,7 @@ class StockEditViewModel(private val c: AppContainer, val id: Long) : ViewModel(
         val item = StockItem(
             id = id, name = f.name, unit = f.unit.trim(), category = f.category, lowThresholdMilli = threshold!!,
             dailyUsageMilli = usage, expiryAlertDays = f.expiryAlertDays, baselineDate = existing?.baselineDate ?: today,
-            notes = f.notes, active = f.active,
+            notes = f.notes, active = f.active, packSizeMilli = packMilli, leadDays = f.leadDays, brand = f.brand, store = f.store,
         )
         viewModelScope.launch {
             when (val r = c.stock.save(item)) {

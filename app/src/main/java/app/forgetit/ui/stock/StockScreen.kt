@@ -62,7 +62,7 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
         floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add item") } },
     ) { pad ->
         ListScreen(pad) {
-            item { ShoppingCard(app.forgetit.domain.shoppingList(items, batches, logs, today)) }
+            item { ShoppingCard(app.forgetit.domain.shoppingList(items, batches, logs, today), today, onBought = { vm.restock(it.itemId, it.buyMilli, null) }) }
             if (items.isEmpty()) item { EmptyState(AppIcons.Stock, "Your shelf is empty", "Add milk, rice or anything you keep running out of. Forget-it will warn you before it does.") }
             for (g in Group.entries) {
                 val list = grouped[g].orEmpty().sortedBy { it.first.name.lowercase() }

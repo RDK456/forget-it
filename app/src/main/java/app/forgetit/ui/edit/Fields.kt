@@ -1,6 +1,8 @@
 package app.forgetit.ui.edit
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -61,3 +63,25 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
         ) { DatePicker(state) }
     }
 }
+
+/** Extra reminders before a due date, on top of the main lead time: pick any of 14, 7, 3, 1 days or the day itself. */
+@Composable
+fun ExtraRemindChips(selected: List<Int>, onChange: (List<Int>) -> Unit) {
+    androidx.compose.material3.Text("Also remind me", style = androidx.compose.material3.MaterialTheme.typography.labelLarge)
+    androidx.compose.foundation.layout.Row(
+        Modifier.androidx_horizontalScroll(),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+    ) {
+        listOf(14, 7, 3, 1, 0).forEach { d ->
+            androidx.compose.material3.FilterChip(
+                selected = d in selected,
+                onClick = { onChange(if (d in selected) selected - d else (selected + d).sortedDescending()) },
+                label = { androidx.compose.material3.Text(if (d == 0) "On the day" else "$d days before") },
+            )
+        }
+    }
+}
+
+@Composable
+private fun Modifier.androidx_horizontalScroll(): Modifier =
+    this.then(Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()))

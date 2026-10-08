@@ -30,6 +30,7 @@ data class SubForm(
     val isTrial: Boolean = false,
     val trialEndsAt: LocalDate = LocalDate.now().plusDays(7),
     val remindDays: Int = 2,
+    val extraRemind: List<Int> = emptyList(),
     val active: Boolean = true,
     val presetKey: String? = null,
 )
@@ -56,7 +57,7 @@ class EditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
                     startDate = existing.startDate, category = existing.category, notes = existing.notes,
                     cancelUrl = existing.cancelUrl.orEmpty(), paymentMethod = existing.paymentMethod,
                     isTrial = existing.isTrial, trialEndsAt = existing.trialEndsAt ?: today.plusDays(7),
-                    remindDays = existing.remindDaysBefore, active = existing.active, presetKey = existing.presetKey,
+                    remindDays = existing.remindDaysBefore, extraRemind = existing.extraRemindDays, active = existing.active, presetKey = existing.presetKey,
                 )
             } else {
                 SubForm(currency = c.settings.flow.first().defaultCurrency, startDate = today, trialEndsAt = today.plusDays(7))
@@ -88,7 +89,7 @@ class EditViewModel(private val c: AppContainer, val id: Long) : ViewModel() {
             customDays = if (f.cycle == Cycle.CUSTOM_DAYS) days else null, startDate = f.startDate,
             category = f.category, notes = f.notes, cancelUrl = f.cancelUrl.trim().ifBlank { null },
             presetKey = f.presetKey, paymentMethod = f.paymentMethod, isTrial = f.isTrial,
-            trialEndsAt = if (f.isTrial) f.trialEndsAt else null, remindDaysBefore = f.remindDays, active = f.active,
+            trialEndsAt = if (f.isTrial) f.trialEndsAt else null, remindDaysBefore = f.remindDays, extraRemindDays = f.extraRemind, active = f.active,
         )
         viewModelScope.launch {
             when (val r = c.subscriptions.save(sub)) {
