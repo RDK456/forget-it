@@ -34,7 +34,7 @@ fun SavingsSpotlight(top: List<Pair<Subscription, Long>>, currency: String, modi
                 Text("Savings spotlight", style = MaterialTheme.typography.labelLarge)
                 Text("$name costs ${Money.format(monthly * 12, currency)} a year.", style = MaterialTheme.typography.titleSmall)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Your top ${top.size} together: ", style = MaterialTheme.typography.bodyMedium)
+                    Text(if (top.size > 1) "Cancel your top ${top.size} and keep: " else "Cancel it and keep: ", style = MaterialTheme.typography.bodyMedium)
                     AnimatedMoney(allYearly, currency, MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.tertiary)
                 }
                 Text("Worth a look before the next renewal?", style = MaterialTheme.typography.bodySmall)
