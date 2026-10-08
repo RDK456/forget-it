@@ -30,12 +30,15 @@ import androidx.compose.ui.unit.sp
 import app.forgetit.domain.Money
 import app.forgetit.ui.theme.domainColors
 
-/** The one memorable element: this month's outgo as a big number, with a bar showing subscriptions versus EMIs. */
+/** The one memorable element: this month's outgo as a big number, with a bar showing subscriptions, EMIs and bills. */
 @Composable
-fun OutgoHero(subsMinor: Long, emiMinor: Long, yearlyMinor: Long, currency: String, excluded: Int, modifier: Modifier = Modifier) {
-    val total = subsMinor + emiMinor
-    val shown by animateFloatAsState(total.toFloat(), tween(650, easing = FastOutSlowInEasing), label = "outgo")
-    val subShare by animateFloatAsState(if (total > 0) subsMinor.toFloat() / total else 0f, tween(650, easing = FastOutSlowInEasing), label = "share")
+fun OutgoHero(subsMinor: Long, emiMinor: Long, billsMinor: Long, yearlyMinor: Long, currency: String, excluded: Int, modifier: Modifier = Modifier) {
+    val total = subsMinor + emiMinor + billsMinor
+    val spec = tween<Float>(650, easing = FastOutSlowInEasing)
+    val shown by animateFloatAsState(total.toFloat(), spec, label = "outgo")
+    val subShare by animateFloatAsState(if (total > 0) subsMinor.toFloat() / total else 0f, spec, label = "sub")
+    val emiShare by animateFloatAsState(if (total > 0) emiMinor.toFloat() / total else 0f, spec, label = "emi")
+    val billShare by animateFloatAsState(if (total > 0) billsMinor.toFloat() / total else 0f, spec, label = "bill")
     val dc = domainColors
 
     OutlinedCard(modifier.fillMaxWidth()) {
@@ -49,12 +52,14 @@ fun OutgoHero(subsMinor: Long, emiMinor: Long, yearlyMinor: Long, currency: Stri
             Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(10.dp).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh)) {
                 if (total > 0) Row(Modifier.fillMaxHeight()) {
                     if (subShare > 0.001f) Box(Modifier.weight(subShare).fillMaxHeight().background(dc.subscription))
-                    if (1f - subShare > 0.001f) Box(Modifier.weight(1f - subShare).fillMaxHeight().background(dc.loan))
+                    if (emiShare > 0.001f) Box(Modifier.weight(emiShare).fillMaxHeight().background(dc.loan))
+                    if (billShare > 0.001f) Box(Modifier.weight(billShare).fillMaxHeight().background(dc.bill))
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 4.dp)) {
                 Legend(dc.subscription, "Subscriptions", Money.format(subsMinor, currency))
                 Legend(dc.loan, "EMIs", Money.format(emiMinor, currency))
+                if (billsMinor > 0) Legend(dc.bill, "Bills", Money.format(billsMinor, currency))
             }
             if (excluded > 0) {
                 Text("$excluded item(s) left out - add exchange rates in Settings", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)

@@ -179,4 +179,25 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     fun finishStock(itemId: Long, onResult: (app.forgetit.domain.UseResult) -> Unit) = viewModelScope.launch {
         onResult(c.stock.finish(itemId, java.time.LocalDate.now(c.clock)))
     }
+
+    val bills = c.bills.observeBills().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val billEntries = c.bills.observeEntries().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun deleteBill(id: Long) = viewModelScope.launch { c.bills.delete(id) }
+
+    fun recordBill(billId: Long, due: java.time.LocalDate, amountMinor: Long, paid: Boolean) = viewModelScope.launch {
+        c.bills.record(billId, due, amountMinor, if (paid) java.time.LocalDate.now(c.clock) else null)
+    }
+
+    fun removeBillEntry(billId: Long, due: java.time.LocalDate) = viewModelScope.launch { c.bills.removeEntry(billId, due) }
+
+    fun exportBills(uri: android.net.Uri, onDone: (String) -> Unit) = exportWith(uri, "bills", onDone) {
+        app.forgetit.domain.BillCsv.export(c.bills.getBills(), c.bills.getEntries())
+    }
+
+    fun importBills(uri: android.net.Uri, onDone: (String) -> Unit) = importWith(uri, onDone) { text ->
+        val r = app.forgetit.domain.BillCsv.import(text)
+        r.items.forEach { c.bills.importBundle(it) }
+        summary(r.items.size, r.errors)
+    }
 }

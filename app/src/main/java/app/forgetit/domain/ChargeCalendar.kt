@@ -3,7 +3,7 @@ package app.forgetit.domain
 import java.time.LocalDate
 import java.time.YearMonth
 
-enum class EntryType { SUBSCRIPTION, EMI, EXPIRY }
+enum class EntryType { SUBSCRIPTION, EMI, EXPIRY, BILL }
 
 data class CalendarEntry(val date: LocalDate, val type: EntryType, val title: String, val detail: String)
 

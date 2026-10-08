@@ -27,6 +27,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.Amortization
+import app.forgetit.domain.BillMath
+import app.forgetit.domain.billMonthlyOutgo
+import app.forgetit.ui.billIcon
+import app.forgetit.ui.theme.domainColors
 import app.forgetit.domain.Money
 import app.forgetit.domain.Renewal
 import app.forgetit.domain.RowStatus
@@ -74,13 +78,18 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
     val stockItems by vm.stockItems.collectAsStateWithLifecycle()
     val stockBatches by vm.stockBatches.collectAsStateWithLifecycle()
     val stockLogs by vm.stockLogs.collectAsStateWithLifecycle()
+    val bills by vm.bills.collectAsStateWithLifecycle()
+    val billEntries by vm.billEntries.collectAsStateWithLifecycle()
+    val billTint = domainColors.bill
     val haptic = LocalHapticFeedback.current
 
     val rates = settings.rates.mapValues { it.value.value }
     val cur = settings.defaultCurrency
     val subTotals = computeTotals(subs, today, cur, rates)
     val emi = loanMonthlyOutgo(loans, adj, pay, today, cur, rates)
-    val totals = Totals(subTotals.monthlyMinor + emi.monthlyMinor, subTotals.yearlyMinor + emi.monthlyMinor * 12, subTotals.excluded + emi.excluded)
+    val billOut = billMonthlyOutgo(bills, billEntries, cur, rates)
+    val monthlyAll = subTotals.monthlyMinor + emi.monthlyMinor + billOut.monthlyMinor
+    val totals = Totals(monthlyAll, subTotals.yearlyMinor + (emi.monthlyMinor + billOut.monthlyMinor) * 12, subTotals.excluded + emi.excluded + billOut.excluded)
     val horizon = today.plusDays(UPCOMING_DAYS)
 
     val subItems = subs.filter { it.active }.mapNotNull { s ->
@@ -117,7 +126,17 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
             }
         }
     }
-    val upcoming = (subItems + emiItems + stockUp).sortedBy { it.date }
+    val billItems = bills.filter { it.active }.mapNotNull { b ->
+        val mine = billEntries.filter { it.billId == b.id }
+        val due = BillMath.pendingDue(b, mine, today) ?: return@mapNotNull null
+        if (due.isAfter(horizon)) return@mapNotNull null
+        val usual = BillMath.average(mine)
+        Upcoming(
+            "bill:${b.id}", b.name, "Bill due", due, usual?.let { "~" + Money.format(it, b.currency) }, covers["BILL:${b.id}"],
+            overdue = due.isBefore(today), icon = billIcon(b.type), tint = billTint,
+        )
+    }
+    val upcoming = (subItems + emiItems + stockUp + billItems).sortedBy { it.date }
 
     val overdue = upcoming.firstOrNull { it.overdue }
     val soon = upcoming.firstOrNull { !it.overdue && !it.date.isAfter(today.plusDays(3)) }
@@ -134,7 +153,7 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
         ScreenScaffold("Overview", onBack = null) { pad ->
             ListScreen(pad) {
                 item { RemyHeader(mood, greeting, message) }
-                item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
+                item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, billOut.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
                 item { Text("Coming up in $UPCOMING_DAYS days", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
                 if (upcoming.isEmpty()) item { Text("Nothing due soon. Enjoy the quiet.", style = MaterialTheme.typography.bodyMedium) }
                 itemsIndexed(upcoming, key = { _, u -> u.key }) { i, u ->

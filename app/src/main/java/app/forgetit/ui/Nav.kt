@@ -48,6 +48,10 @@ import app.forgetit.ui.loans.LoanEditScreen
 import app.forgetit.ui.loans.LoanEditViewModel
 import app.forgetit.ui.loans.LoansScreen
 import app.forgetit.ui.settings.SettingsScreen
+import app.forgetit.ui.bills.BillDetailScreen
+import app.forgetit.ui.bills.BillEditScreen
+import app.forgetit.ui.bills.BillEditViewModel
+import app.forgetit.ui.bills.BillsScreen
 import app.forgetit.ui.txn.ShareImportScreen
 import app.forgetit.ui.txn.TransactionsScreen
 import app.forgetit.ui.stock.StockDetailScreen
@@ -123,6 +127,9 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
             composable("insights") { InsightsScreen(vm, today, onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(vm, onBack = { nav.popBackStack() }) }
             composable("transactions") { TransactionsScreen(vm, today, onBack = { nav.popBackStack() }) }
+            composable("bills") { BillsScreen(vm, today, onAdd = { nav.navigate("billedit/0") }, onOpen = { nav.navigate("bill/$it") }, onBack = { nav.popBackStack() }) }
+            composable("bill/{id}") { e -> BillRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, vm, today, container, nav) }
+            composable("billedit/{id}") { e -> BillEditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
             composable("share") { ShareImportScreen(vm, sharedText.orEmpty(), today, onDone = { onSharedConsumed(); nav.popBackStack() }) }
             composable("edit/{id}") { e -> EditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
         }
@@ -143,6 +150,7 @@ private fun MoreScreen(nav: NavController) {
             listOf(
                 Triple("calendar", "Calendar", AppIcons.Calendar),
                 Triple("insights", "Insights", AppIcons.Insights),
+                Triple("bills", "Bills and utilities", AppIcons.Bills),
                 Triple("transactions", "Transactions", AppIcons.Transactions),
                 Triple("settings", "Settings", AppIcons.Settings),
             ).forEach { (r, label, icon) ->
@@ -217,5 +225,23 @@ private fun StockEditRoute(id: Long, container: AppContainer, nav: NavController
     StockEditScreen(
         evm, onDone = { nav.popBackStack() }, onSaved = { ask(); nav.popBackStack() },
         photos = { PhotoSection(container.photos, OwnerType.STOCK_ITEM, id) },
+    )
+}
+
+@Composable
+private fun BillRoute(id: Long, vm: MainViewModel, today: LocalDate, container: AppContainer, nav: NavController) {
+    BillDetailScreen(
+        vm, id, today, onBack = { nav.popBackStack() }, onEdit = { nav.navigate("billedit/$id") },
+        photos = { PhotoSection(container.photos, OwnerType.BILL, id) },
+    )
+}
+
+@Composable
+private fun BillEditRoute(id: Long, container: AppContainer, nav: NavController) {
+    val evm: BillEditViewModel = viewModel(key = "billedit$id", factory = viewModelFactory { initializer { BillEditViewModel(container, id) } })
+    val ask = rememberNotificationAsker()
+    BillEditScreen(
+        evm, onDone = { nav.popBackStack() }, onSaved = { ask(); nav.popBackStack() },
+        photos = { PhotoSection(container.photos, OwnerType.BILL, id) },
     )
 }

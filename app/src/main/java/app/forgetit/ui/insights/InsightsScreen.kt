@@ -50,10 +50,13 @@ fun InsightsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
     val loans by vm.loans.collectAsStateWithLifecycle()
     val loanPay by vm.loanPayments.collectAsStateWithLifecycle()
     val loanAdj by vm.loanAdjustments.collectAsStateWithLifecycle()
+    val bills by vm.bills.collectAsStateWithLifecycle()
+    val billEntries by vm.billEntries.collectAsStateWithLifecycle()
     val rates = settings.rates.mapValues { it.value.value }
     val emi = loanMonthlyOutgo(loans, loanAdj, loanPay, today, cur, rates)
-    val base = computeInsights(subs, today, cur, rates, listOf(CategorySlice("Loans (EMI)", emi.monthlyMinor)))
-    val ins = base.copy(excluded = base.excluded + emi.excluded)
+    val billOut = app.forgetit.domain.billMonthlyOutgo(bills, billEntries, cur, rates)
+    val base = computeInsights(subs, today, cur, rates, listOf(CategorySlice("Loans (EMI)", emi.monthlyMinor), CategorySlice("Bills", billOut.monthlyMinor)))
+    val ins = base.copy(excluded = base.excluded + emi.excluded + billOut.excluded)
 
     ScreenScaffold("Insights", onBack) { pad ->
         ListScreen(pad) {

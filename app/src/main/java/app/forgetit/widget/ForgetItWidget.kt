@@ -46,9 +46,12 @@ class ForgetItWidget : GlanceAppWidget() {
         val loans = c.loans.getLoans()
         val adj = c.loans.getAdjustments()
         val pay = c.loans.getPayments()
+        val bills = c.bills.getBills()
+        val billEntries = c.bills.getEntries()
         val subTotals = computeTotals(subs, today, settings.defaultCurrency, rates)
         val emi = loanMonthlyOutgo(loans, adj, pay, today, settings.defaultCurrency, rates)
-        val monthly = subTotals.monthlyMinor + emi.monthlyMinor
+        val billOut = app.forgetit.domain.billMonthlyOutgo(bills, billEntries, settings.defaultCurrency, rates)
+        val monthly = subTotals.monthlyMinor + emi.monthlyMinor + billOut.monthlyMinor
         val hide = settings.biometricLock
 
         val subRows = subs.filter { it.active }.map { Row3(it.name, Renewal.next(it, today), Money.format(it.amountMinor, it.currency)) }
@@ -56,7 +59,12 @@ class ForgetItWidget : GlanceAppWidget() {
             val row = Amortization.build(l, adj.filter { it.loanId == l.id }, pay.filter { it.loanId == l.id }, today).nextDue ?: return@mapNotNull null
             Row3("${l.name} EMI", row.dueDate, Money.format(row.paymentMinor, l.currency))
         }
-        val rows = (subRows + emiRows).sortedBy { it.date }.take(3)
+        val billRows = bills.filter { it.active }.mapNotNull { b ->
+            val mine = billEntries.filter { it.billId == b.id }
+            val due = app.forgetit.domain.BillMath.pendingDue(b, mine, today) ?: return@mapNotNull null
+            Row3(b.name, due, app.forgetit.domain.BillMath.average(mine)?.let { "~" + Money.format(it, b.currency) } ?: "")
+        }
+        val rows = (subRows + emiRows + billRows).sortedBy { it.date }.take(3)
         val open = actionStartActivity(Intent(context, MainActivity::class.java))
 
         provideContent {

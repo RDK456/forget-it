@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.ChargeCalendar
 import app.forgetit.domain.EntryType
+import app.forgetit.domain.billCalendarEntries
 import app.forgetit.domain.loanCalendarEntries
 import app.forgetit.domain.stockCalendarEntries
 import app.forgetit.ui.ListScreen
@@ -48,6 +49,7 @@ private fun dotColor(t: EntryType): Color = when (t) {
     EntryType.SUBSCRIPTION -> domainColors.subscription
     EntryType.EMI -> domainColors.loan
     EntryType.EXPIRY -> domainColors.stock
+    EntryType.BILL -> domainColors.bill
 }
 
 @Composable
@@ -58,13 +60,18 @@ fun CalendarScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
     val loanAdj by vm.loanAdjustments.collectAsStateWithLifecycle()
     val stockItems by vm.stockItems.collectAsStateWithLifecycle()
     val stockBatches by vm.stockBatches.collectAsStateWithLifecycle()
+    val bills by vm.bills.collectAsStateWithLifecycle()
+    val billEntries by vm.billEntries.collectAsStateWithLifecycle()
     var monthIndex by rememberSaveable { mutableStateOf(today.year * 12 + today.monthValue - 1) }
     var selected by rememberSaveable { mutableStateOf<Long?>(today.toEpochDay()) }
     val month = YearMonth.of(monthIndex / 12, monthIndex % 12 + 1)
     val subEntries = ChargeCalendar.subscriptionEntries(subs, month)
     val emiEntries = loanCalendarEntries(loans, loanAdj, loanPay, month, today)
     val expiryEntries = stockCalendarEntries(stockItems, stockBatches, month)
-    val entries = (subEntries.keys + emiEntries.keys + expiryEntries.keys).associateWith { subEntries[it].orEmpty() + emiEntries[it].orEmpty() + expiryEntries[it].orEmpty() }
+    val billCal = billCalendarEntries(bills, billEntries, month, today)
+    val entries = (subEntries.keys + emiEntries.keys + expiryEntries.keys + billCal.keys).associateWith {
+        subEntries[it].orEmpty() + emiEntries[it].orEmpty() + expiryEntries[it].orEmpty() + billCal[it].orEmpty()
+    }
     val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
     val lead = (month.atDay(1).dayOfWeek.value - first.value + 7) % 7
 

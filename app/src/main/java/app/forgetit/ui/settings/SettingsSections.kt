@@ -116,5 +116,6 @@ fun BackupSection(vm: MainViewModel) {
     CsvRow("Subscriptions", "forgetit-subscriptions.csv", { message = it }, vm::exportSubscriptions, vm::importSubscriptions)
     CsvRow("Loans and EMIs", "forgetit-loans.csv", { message = it }, vm::exportLoans, vm::importLoans)
     CsvRow("Household stock", "forgetit-stock.csv", { message = it }, vm::exportStock, vm::importStock)
+    CsvRow("Bills and utilities", "forgetit-bills.csv", { message = it }, vm::exportBills, vm::importBills)
     message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 }

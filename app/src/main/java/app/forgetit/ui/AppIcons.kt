@@ -16,6 +16,7 @@ import com.composables.icons.lucide.Landmark
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.ReceiptText
+import com.composables.icons.lucide.Receipt
 import com.composables.icons.lucide.RefreshCw
 import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.Settings
@@ -45,4 +46,5 @@ object AppIcons {
     val Gallery: ImageVector get() = Lucide.Image
     val Close: ImageVector get() = Lucide.X
     val Search: ImageVector get() = Lucide.Search
+    val Bills: ImageVector get() = Lucide.Receipt
 }
