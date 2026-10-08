@@ -20,6 +20,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -40,7 +42,8 @@ private fun cycleName(c: Cycle) = when (c) {
 }
 
 @Composable
-fun EditScreen(vm: EditViewModel, onDone: () -> Unit, onSaved: () -> Unit = onDone, photos: @Composable () -> Unit = {}) {
+fun EditScreen(vm: EditViewModel, onDone: () -> Unit, onSaved: () -> Unit = onDone, onDelete: (() -> Unit)? = null, photos: @Composable () -> Unit = {}) {
+    var confirmDelete by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val f = vm.form
     val err = vm.errors
     val uri = LocalUriHandler.current
@@ -112,10 +115,12 @@ fun EditScreen(vm: EditViewModel, onDone: () -> Unit, onSaved: () -> Unit = onDo
                 f.notes, { v -> vm.update { it.copy(notes = v) } }, label = { Text("Notes (optional)") }, modifier = Modifier.fillMaxWidth(),
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Active (counts in totals and reminders)", Modifier.weight(1f)); Switch(f.active, { v -> vm.update { it.copy(active = v) } })
+                Text("Active (turn off to put on hold: not counted, no reminders)", Modifier.weight(1f)); Switch(f.active, { v -> vm.update { it.copy(active = v) } })
             }
             photos()
             Button(onClick = vm::save, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) { Text("Save") }
+            if (vm.id != 0L && onDelete != null) OutlinedButton({ confirmDelete = true }, Modifier.fillMaxWidth()) { Text("Delete this subscription") }
         }
     }
+    if (confirmDelete) app.forgetit.ui.loans.ConfirmDialog("Delete subscription?", "This removes it, its photos and reminders. It will not be added again automatically.", "Delete", { confirmDelete = false; onDelete?.invoke() }, { confirmDelete = false })
 }

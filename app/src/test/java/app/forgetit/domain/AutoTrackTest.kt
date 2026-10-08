@@ -29,7 +29,10 @@ class AutoTrackTest {
         assertEquals(12, loan.tenureMonths)
         assertEquals(1_245_000L * 12, loan.principalMinor)
         assertEquals(1_245_000L, loan.emiOverrideMinor)
-        assertTrue(loan.notes.contains("estimates"))
+        assertTrue(loan.notes.contains("Placeholders"))
+        assertTrue(!loan.active)
+        assertTrue(AutoTrack.isUnreviewed(loan.notes))
+        assertTrue(!AutoTrack.isUnreviewed(AutoTrack.reviewed(loan.notes)))
     }
 
     @Test fun oneDebitOrIrregularDebitsAreNotALoan() {
@@ -87,5 +90,17 @@ class AutoTrackTest {
         val p = AutoTrack.estimatePrincipal(10_000, 12, BigDecimal("12"))
         assertNotNull(p)
         assertTrue(p in 112_000L..113_000L)
+    }
+
+    @Test fun lenderNamedPaymentsAndAmountsOfKnownLoansAreNotSubscriptions() {
+        val finance = listOf(debit("Tata Capital Ltd", 800_000, "2026-08-05"), debit("Tata Capital Ltd", 800_000, "2026-09-05"))
+        assertTrue(AutoTrack.subscriptionGuesses(finance, emptyList(), emptySet()).isEmpty())
+        // The same lender shows up as a loan, never as a subscription.
+        assertEquals(1, AutoTrack.loanGuessesFromHistory(finance, emptyList(), emptySet()).size)
+        val odd = listOf(debit("Acme Co", 50_000, "2026-08-05"), debit("Acme Co", 50_000, "2026-09-05"))
+        assertTrue(AutoTrack.subscriptionGuesses(odd, emptyList(), emptySet(), loans = listOf(loan())).isEmpty())
+        assertEquals(1, AutoTrack.subscriptionGuesses(odd, emptyList(), emptySet()).size)
+        assertTrue(AutoTrack.isEmiTxn(debit("Bajaj Finserv", 100, "2026-09-05")))
+        assertTrue(!AutoTrack.isEmiTxn(debit("Netflix", 100, "2026-09-05")))
     }
 }

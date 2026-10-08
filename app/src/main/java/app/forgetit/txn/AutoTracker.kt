@@ -68,7 +68,7 @@ object AutoTracker {
         val rules = c.txns.observeRules().first()
         if (s.autoAddSubs) {
             val tracked = c.subscriptions.getAll().map { it.name } + c.loans.getLoans().map { it.name }
-            for (g in AutoTrack.subscriptionGuesses(txns, tracked, s.autoDismissed, rules)) addSubscription(c, g)
+            for (g in AutoTrack.subscriptionGuesses(txns, tracked, s.autoDismissed, rules, c.loans.getLoans())) addSubscription(c, g)
         }
         if (s.autoCreateLoans) {
             for (g in AutoTrack.loanGuessesFromHistory(txns, c.loans.getLoans(), s.autoDismissed, rules)) createLoan(c, g)
@@ -79,11 +79,11 @@ object AutoTracker {
         val sub = Subscription(
             name = g.merchant, amountMinor = g.amountMinor, currency = g.currency, cycle = g.cycle, startDate = g.lastDate,
             category = PRESETS.firstOrNull { it.name.equals(g.merchant, ignoreCase = true) }?.category ?: "Other",
-            notes = "Added automatically from your payments.",
+            notes = AutoTrack.SUB_GUESS_NOTE + " It repeats like a subscription, so it is on hold until you keep it.", active = false,
         )
         val saved = c.subscriptions.save(sub) as? SaveResult.Saved ?: return
-        notify(c.context, 7400 + (saved.id.toInt() and 0xFFF), "Subscription added: ${g.merchant}",
-            "${Money.format(g.amountMinor, g.currency)} ${g.cycle.name.lowercase()}, found in your payments.", "sub", saved.id, AutoTrack.subKey(g.merchant))
+        notify(c.context, 7400 + (saved.id.toInt() and 0xFFF), "Please review: ${g.merchant}",
+            "${Money.format(g.amountMinor, g.currency)} ${g.cycle.name.lowercase()} looks like a subscription. It is on hold until you keep it.", "sub", saved.id, AutoTrack.subKey(g.merchant), held = true)
     }
 
     private suspend fun addFromConfirmation(c: AppContainer, g: SubGuess, text: String, source: String, sender: String) {
@@ -100,15 +100,15 @@ object AutoTracker {
     }
 
     private suspend fun createLoan(c: AppContainer, g: LoanGuess) {
-        val saved = c.loans.save(AutoTrack.toLoan(g)) as? SaveResult.Saved ?: return
+        val saved = c.loans.save(AutoTrack.toLoan(g).copy(active = false)) as? SaveResult.Saved ?: return
         // Instalments already seen in the payments are marked paid, so the schedule starts from today's real position.
         g.paidDates.forEachIndexed { i, day -> c.loans.markPaid(saved.id, i + 1, day, g.emiMinor) }
-        notify(c.context, 7400 + (saved.id.toInt() and 0xFFF) + 0x1000, "Loan added: ${g.name}",
-            "EMI ${Money.format(g.emiMinor, g.currency)} a month. The amount, rate and length are estimates, so check the terms.", "loan", saved.id, AutoTrack.loanKey(g.name))
+        notify(c.context, 7400 + (saved.id.toInt() and 0xFFF) + 0x1000, "Please review: ${g.name}",
+            "EMI ${Money.format(g.emiMinor, g.currency)} a month. Added on hold because the loan amount, rate or months may be placeholders.", "loan", saved.id, AutoTrack.loanKey(g.name), held = true)
     }
 
     @SuppressLint("MissingPermission")
-    private fun notify(context: Context, id: Int, title: String, text: String, kind: String, entityId: Long, key: String) {
+    private fun notify(context: Context, id: Int, title: String, text: String, kind: String, entityId: Long, key: String, held: Boolean = false) {
         val nm = NotificationManagerCompat.from(context)
         if (!nm.areNotificationsEnabled()) return
         val open = PendingIntent.getActivity(
@@ -120,13 +120,33 @@ object AutoTracker {
             Intent(context, UndoReceiver::class.java).setAction("app.forgetit.UNDO_AUTO").putExtra("kind", kind).putExtra("id", entityId).putExtra("key", key).putExtra("nid", id),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val n = NotificationCompat.Builder(context, Notifications.CH_FOUND).setSmallIcon(R.drawable.ic_stat_forgetit)
+        val keep = PendingIntent.getBroadcast(
+            context, id + 0x2000,
+            Intent(context, UndoReceiver::class.java).setAction("app.forgetit.KEEP_AUTO").putExtra("kind", kind).putExtra("id", entityId).putExtra("nid", id),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val b = NotificationCompat.Builder(context, Notifications.CH_FOUND).setSmallIcon(R.drawable.ic_stat_forgetit)
             .setContentTitle(title).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setContentIntent(open).setAutoCancel(true).addAction(0, "Undo", undo).build()
+            .setContentIntent(open).setAutoCancel(true)
+        if (held) b.addAction(0, "Keep", keep).addAction(0, "Delete", undo) else b.addAction(0, "Undo", undo)
+        val n = b.build()
         try { nm.notify(id, n) } catch (_: SecurityException) {}
     }
 
-    /** Undo button on the notification: deletes what was added and stops it coming back. */
+    /** Deletes a subscription or loan and remembers the name, so payments that look the same do not bring it back. */
+    suspend fun forget(c: AppContainer, kind: String, id: Long) {
+        val key = if (kind == "sub") c.subscriptions.get(id)?.name?.let(AutoTrack::subKey) else c.loans.getLoan(id)?.name?.let(AutoTrack::loanKey)
+        if (kind == "sub") c.subscriptions.delete(id) else c.loans.delete(id)
+        if (!key.isNullOrEmpty()) c.settings.setAutoDismissed(c.settings.flow.first().autoDismissed + key)
+    }
+
+    /** The user accepted a guessed item: it counts again and no longer asks for a review. */
+    suspend fun keep(c: AppContainer, kind: String, id: Long) {
+        if (kind == "sub") c.subscriptions.get(id)?.let { c.subscriptions.save(it.copy(active = true, notes = AutoTrack.reviewed(it.notes))) }
+        else c.loans.getLoan(id)?.let { c.loans.save(it.copy(active = true, notes = AutoTrack.reviewed(it.notes))) }
+    }
+
+    /** Buttons on the notification: Undo and Delete remove the item for good; Keep accepts it. */
     class UndoReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val c = (context.applicationContext as ForgetItApp).container
@@ -136,8 +156,11 @@ object AutoTracker {
             val pending = goAsync()
             c.appScope.launch {
                 try {
-                    if (kind == "sub") c.subscriptions.delete(id) else c.loans.delete(id)
-                    if (key.isNotEmpty()) c.settings.setAutoDismissed(c.settings.flow.first().autoDismissed + key)
+                    if (intent.action == "app.forgetit.KEEP_AUTO") keep(c, kind, id)
+                    else {
+                        if (kind == "sub") c.subscriptions.delete(id) else c.loans.delete(id)
+                        if (key.isNotEmpty()) c.settings.setAutoDismissed(c.settings.flow.first().autoDismissed + key)
+                    }
                     NotificationManagerCompat.from(context).cancel(intent.getIntExtra("nid", 0))
                 } finally { pending.finish() }
             }

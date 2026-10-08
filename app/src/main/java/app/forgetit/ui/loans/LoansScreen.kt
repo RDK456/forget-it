@@ -71,6 +71,7 @@ fun LoansScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
                 val paidCount = s.rows.count { it.status == RowStatus.PAID }
                 OutlinedCard(Modifier.animateItem().fillMaxWidth().enterStagger(loans.indexOf(l), l.id).pressScale { onOpen(l.id) }) {
                     Column(Modifier.padding(12.dp)) {
+                        if (!l.active) Text("On hold: not counted, no reminders", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Avatar(l.name, covers["LOAN:${l.id}"], icon = loanIcon(l.type), tint = androidx.compose.ui.graphics.Color(0xFF5560E0))
                             Spacer(Modifier.width(12.dp))
@@ -94,6 +95,7 @@ fun LoansScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
                             style = MaterialTheme.typography.bodySmall,
                             color = if (next?.status == RowStatus.OVERDUE) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (app.forgetit.domain.AutoTrack.isUnreviewed(l.notes)) app.forgetit.ui.ReviewStrip(!l.active, { vm.keepAuto("loan", l.id) }, { vm.deleteLoan(l.id) })
                     }
                 }
             }

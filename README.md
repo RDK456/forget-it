@@ -37,11 +37,15 @@ export JAVA_HOME=<your jdk 17>
 
 ## Gmail setup (optional)
 
-Gmail sync uses Google sign-in with the read-only Gmail scope. It needs a Google Cloud project that you own:
+Gmail sync uses Google sign-in with the read-only Gmail scope. Google only allows it for an app that is registered in a Google Cloud project, and that project has to be yours:
 
-1. Create a project, enable the Gmail API, and set up the OAuth consent screen (add yourself as a test user while it is in testing).
-2. Create an OAuth client of type Android with package name app.forgetit and the SHA-1 of your signing key (debug: gradlew signingReport).
-3. Install the app, then Settings, Auto-scan, Gmail, Sign in.
+1. In console.cloud.google.com create a project and enable the Gmail API.
+2. Google Auth Platform, Branding and Audience: choose External, fill in the app name and your email, and add your own Gmail address under Test users. Gmail read access is a restricted scope, so the app stays in Testing; only the listed test users (up to 100) can sign in.
+3. Clients, Create client, type Android, package name `app.forgetit`, SHA-1 `14:3B:F2:8C:1E:74:24:BC:11:C7:51:8D:51:E7:53:58:72:44:32:4F` (the release key used for the published APKs; for a build you signed yourself use `gradlew signingReport`).
+4. On the Data access page add the scope `https://www.googleapis.com/auth/gmail.readonly`.
+5. Install the app, then Settings, Capture, Gmail, Sign in.
+
+While the project is in Testing, Google expires the sign-in about every 7 days, so you may need to tap Sign in again. If the app shows "Google does not recognise this app yet", the Android client or SHA-1 does not match the build you installed. Without Gmail, notification access (Settings, Capture, Email alerts) and Share from the mail app cover the same ground.
 
 Without this setup the Sign in button shows Google's error and the rest of the app is unaffected. Needs Google Play services on the phone.
 

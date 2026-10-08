@@ -25,7 +25,13 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    fun deleteSubscription(id: Long) = viewModelScope.launch { c.subscriptions.delete(id) }
+    fun deleteSubscription(id: Long) = viewModelScope.launch { app.forgetit.txn.AutoTracker.forget(c, "sub", id) }
+
+    /** Puts a subscription on hold (not counted, no reminders) or brings it back. */
+    fun setSubscriptionHold(id: Long, hold: Boolean) = viewModelScope.launch { c.subscriptions.get(id)?.let { c.subscriptions.save(it.copy(active = !hold)) } }
+
+    /** Accepts an item the app added by itself. */
+    fun keepAuto(kind: String, id: Long) = viewModelScope.launch { app.forgetit.txn.AutoTracker.keep(c, kind, id) }
 
     fun setCurrency(code: String) = viewModelScope.launch { c.settings.setDefaultCurrency(code) }
     fun setRate(code: String, value: java.math.BigDecimal) =
@@ -67,7 +73,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     val loanPayments = c.loans.observePayments().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val loanAdjustments = c.loans.observeAdjustments().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    fun deleteLoan(id: Long) = viewModelScope.launch { c.loans.delete(id) }
+    fun deleteLoan(id: Long) = viewModelScope.launch { app.forgetit.txn.AutoTracker.forget(c, "loan", id) }
 
     fun markPaid(loanId: Long, no: Int, amountMinor: Long) =
         viewModelScope.launch { c.loans.markPaid(loanId, no, java.time.LocalDate.now(c.clock), amountMinor); c.confetti.value++ }

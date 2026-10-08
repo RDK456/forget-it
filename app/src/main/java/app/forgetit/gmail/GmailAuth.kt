@@ -20,6 +20,19 @@ object GmailAuth {
         data class Failed(val message: String) : Result
     }
 
+    /** Turns Google's terse errors into what the person has to do. */
+    fun explain(raw: String?): String {
+        val m = raw.orEmpty()
+        return when {
+            m.contains("10:") || m.contains("DEVELOPER_ERROR", true) || m.contains("12500") || m.contains("16:") ->
+                "Google does not recognise this app yet. Gmail needs a one-time Google Cloud setup: an Android OAuth client for app.forgetit with this app's SHA-1, and your Gmail address added as a test user. Steps are in the README under Gmail setup."
+            m.contains("7:") || m.contains("network", true) -> "Could not reach Google. Check your connection and try again."
+            m.contains("access_denied", true) || m.contains("blocked", true) -> "Google blocked the sign-in. Add your Gmail address as a test user on the OAuth consent screen, then try again."
+            m.isBlank() -> "Google sign-in failed"
+            else -> "Google sign-in failed: " + m
+        }
+    }
+
     private fun request() = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(SCOPE))).build()
 
     private fun fromResult(r: AuthorizationResult): Result {
@@ -32,12 +45,12 @@ object GmailAuth {
     suspend fun authorize(context: Context): Result = suspendCancellableCoroutine { cont ->
         Identity.getAuthorizationClient(context).authorize(request())
             .addOnSuccessListener { if (cont.isActive) cont.resume(fromResult(it)) }
-            .addOnFailureListener { if (cont.isActive) cont.resume(Result.Failed(it.message ?: "Google sign-in failed")) }
+            .addOnFailureListener { if (cont.isActive) cont.resume(Result.Failed(explain(it.message))) }
     }
 
     fun fromIntent(context: Context, data: Intent): Result = try {
         fromResult(Identity.getAuthorizationClient(context).getAuthorizationResultFromIntent(data))
     } catch (e: Exception) {
-        Result.Failed(e.message ?: "Google sign-in failed")
+        Result.Failed(explain(e.message))
     }
 }

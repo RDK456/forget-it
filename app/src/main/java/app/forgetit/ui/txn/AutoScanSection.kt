@@ -186,7 +186,7 @@ private fun GmailRow(vm: MainViewModel, s: Settings, ctx: Context, onMessage: (S
         vm.syncGmail { onMessage(gmailMessage(it)) }
     }
     val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { res ->
-        val data = res.data ?: return@rememberLauncherForActivityResult
+        val data = res.data ?: run { onMessage("Sign-in was cancelled"); return@rememberLauncherForActivityResult }
         when (val r = GmailAuth.fromIntent(ctx, data)) {
             is GmailAuth.Result.Token -> connected(r.email)
             is GmailAuth.Result.Failed -> onMessage(r.message)

@@ -32,6 +32,7 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -232,6 +233,7 @@ private fun EditRoute(id: Long, container: AppContainer, nav: NavController) {
             }
             nav.popBackStack()
         },
+        onDelete = { container.appScope.launch { app.forgetit.txn.AutoTracker.forget(container, "sub", id) }; nav.popBackStack() },
         photos = { PhotoSection(container.photos, OwnerType.SUBSCRIPTION, id) })
 }
 

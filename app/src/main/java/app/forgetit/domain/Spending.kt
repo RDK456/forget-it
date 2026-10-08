@@ -18,7 +18,7 @@ object TxnCategories {
 /** Puts a payment into a spending category from the merchant and message text. A rule the user taught always wins. */
 object Categorizer {
     private val EXPENSE_WORDS: List<Pair<String, List<String>>> = listOf(
-        "EMI and loans" to listOf("emi", "loan", "instalment", "installment", "bajaj finance", "home credit"),
+        "EMI and loans" to listOf("emi", "loan", "instalment", "installment", "bajaj finance", "home credit", "finance", "finserv", "fincorp", "mortgage"),
         "Subscriptions" to listOf("netflix", "spotify", "prime", "hotstar", "youtube", "disney", "hulu", "apple music", "icloud", "google one", "chatgpt", "subscription", "membership", "renewal", "audible"),
         "Bills and utilities" to listOf("electric", "power", "water", "gas", "broadband", "airtel", "jio", "vodafone", "bsnl", "recharge", "dth", "tata play", "postpaid", "bescom", "utility", "bill pay", "insurance", "premium"),
         "Food and dining" to listOf("swiggy", "zomato", "restaurant", "cafe", "coffee", "starbucks", "mcdonald", "kfc", "domino", "pizza", "burger", "bakery", "dining", "eats", "chai", "biryani"),

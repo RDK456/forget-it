@@ -22,16 +22,33 @@ data class LoanGuess(
  * the same EMI every month or in an EMI message that states the amount and the tenure. Pure logic, no Android, so it is unit tested.
  */
 object AutoTrack {
+    /** Notes that mark an item the app guessed. They stay until the user keeps the item, so the list can ask for a review. */
+    const val SUB_GUESS_NOTE = "Added automatically from your payments."
+    const val LOAN_GUESS_NOTE = "Created from your payment messages."
+    fun isUnreviewed(notes: String) = notes.startsWith(SUB_GUESS_NOTE) || notes.startsWith(LOAN_GUESS_NOTE)
+    fun reviewed(notes: String) = notes.replaceFirst(SUB_GUESS_NOTE, "Reviewed and kept.").replaceFirst(LOAN_GUESS_NOTE, "Reviewed and kept.")
+
+    private val LENDER = listOf("finance", "finserv", "fincorp", "capital", "loan", "emi", "lending", "mortgage", "nbfc", "leasing")
+
+    /** A loan instalment: filed under EMI and loans, or paid to a lender-sounding name that nothing else has claimed. */
+    fun isEmiTxn(t: Txn, rules: Map<String, String> = emptyMap()): Boolean {
+        val cat = t.categoryOr(rules)
+        if (cat == "EMI and loans") return true
+        val key = Categorizer.ruleKey(t.merchant)
+        return cat == "Other" && LENDER.any { key.contains(it) }
+    }
+
     fun subKey(name: String) = "sub:" + Categorizer.ruleKey(name)
     fun loanKey(name: String) = "loan:" + Categorizer.ruleKey(name)
 
     /** Repeating charges worth adding as subscriptions: not already tracked, not turned down before, and not loan instalments. */
     fun subscriptionGuesses(
-        txns: List<Txn>, trackedNames: Collection<String>, dismissed: Set<String>, rules: Map<String, String> = emptyMap(),
+        txns: List<Txn>, trackedNames: Collection<String>, dismissed: Set<String>, rules: Map<String, String> = emptyMap(), loans: List<Loan> = emptyList(),
     ): List<RecurringSuggestion> {
-        val emiMerchants = txns.filter { it.categoryOr(rules) == "EMI and loans" }.mapNotNull { it.merchant?.let(Categorizer::ruleKey) }.toSet()
-        return TxnMatching.recurring(txns, trackedNames).filter {
-            subKey(it.merchant) !in dismissed && Categorizer.ruleKey(it.merchant) !in emiMerchants
+        val emiMerchants = txns.filter { isEmiTxn(it, rules) }.mapNotNull { it.merchant?.let(Categorizer::ruleKey) }.toSet()
+        return TxnMatching.recurring(txns, trackedNames).filter { g ->
+            val sameAsLoan = loans.any { l -> l.currency == g.currency && abs((l.emiOverrideMinor ?: Amortization.baseEmi(l)) - g.amountMinor) <= maxOf(1L, g.amountMinor / 100) }
+            subKey(g.merchant) !in dismissed && Categorizer.ruleKey(g.merchant) !in emiMerchants && !sameAsLoan
         }
     }
 
@@ -50,7 +67,7 @@ object AutoTrack {
     fun loanGuessesFromHistory(
         txns: List<Txn>, loans: List<Loan>, dismissed: Set<String>, rules: Map<String, String> = emptyMap(), minCount: Int = 2,
     ): List<LoanGuess> {
-        val emi = txns.filter { it.direction == TxnDirection.DEBIT && it.status != "IGNORED" && it.categoryOr(rules) == "EMI and loans" }
+        val emi = txns.filter { it.direction == TxnDirection.DEBIT && it.status != "IGNORED" && isEmiTxn(it, rules) }
         val groups = emi.groupBy { (it.merchant?.let(Categorizer::ruleKey)?.takeIf { k -> k.isNotEmpty() } ?: "emi") to it.currency }
         val out = mutableListOf<LoanGuess>()
         for ((_, g) in groups) {
@@ -96,7 +113,15 @@ object AutoTrack {
         return Loan(
             name = g.name.take(60), lender = g.name.take(60), principalMinor = g.principalMinor ?: estimatePrincipal(g.emiMinor, months, g.ratePercent),
             currency = g.currency, annualRatePercent = g.ratePercent ?: BigDecimal.ZERO, tenureMonths = months, firstEmiDate = g.firstDate,
-            emiOverrideMinor = g.emiMinor, notes = "Created from your payment messages. The loan amount, rate and length are estimates, so check the terms.",
+            emiOverrideMinor = g.emiMinor, active = false, notes = LOAN_GUESS_NOTE + " " + guessNote(g),
         )
+    }
+
+    /** Says plainly which numbers were read from the messages and which are placeholders. */
+    private fun guessNote(g: LoanGuess): String {
+        val known = buildList { add("the EMI amount"); if (g.tenureMonths != null) add("the months"); if (g.ratePercent != null) add("the rate"); if (g.principalMinor != null) add("the loan amount") }
+        val missing = buildList { if (g.tenureMonths == null) add("months"); if (g.ratePercent == null) add("rate"); if (g.principalMinor == null) add("loan amount") }
+        return "Read from your messages: " + known.joinToString(", ") + "." +
+            (if (missing.isEmpty()) "" else " Placeholders, please correct: " + missing.joinToString(", ") + ".")
     }
 }

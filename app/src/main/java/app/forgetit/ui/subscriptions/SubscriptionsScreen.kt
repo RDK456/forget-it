@@ -122,25 +122,41 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
             }
             items(shown, key = { it.id }) { s ->
                 val state = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
-                    if (v == SwipeToDismissBoxValue.EndToStart) { delete(s); true } else false
+                    when (v) {
+                        SwipeToDismissBoxValue.EndToStart -> { delete(s); true }
+                        // Swipe right puts it on hold or brings it back, and the row slides back into place.
+                        SwipeToDismissBoxValue.StartToEnd -> { vm.setSubscriptionHold(s.id, s.active); scope.launch { snackbar.showSnackbar(if (s.active) "${s.name} on hold" else "${s.name} active again", duration = SnackbarDuration.Short) }; false }
+                        else -> false
+                    }
                 })
                 SwipeToDismissBox(
-                    state = state, modifier = Modifier.animateItem().enterStagger(shown.indexOf(s), s.id), enableDismissFromStartToEnd = false,
+                    state = state, modifier = Modifier.animateItem().enterStagger(shown.indexOf(s), s.id),
                     backgroundContent = {
-                        Box(Modifier.fillMaxSize().then(if (state.dismissDirection == SwipeToDismissBoxValue.EndToStart) Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.errorContainer) else Modifier).padding(16.dp), contentAlignment = Alignment.CenterEnd) {
-                            Icon(AppIcons.Delete, contentDescription = "Delete")
+                        val toEnd = state.dismissDirection == SwipeToDismissBoxValue.EndToStart
+                        val toStart = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+                        Box(
+                            Modifier.fillMaxSize().then(
+                                if (toEnd) Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.errorContainer)
+                                else if (toStart) Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.secondaryContainer) else Modifier,
+                            ).padding(16.dp),
+                            contentAlignment = if (toStart) Alignment.CenterStart else Alignment.CenterEnd,
+                        ) {
+                            if (toStart) Text(if (s.active) "Hold" else "Resume", style = MaterialTheme.typography.labelLarge) else Icon(AppIcons.Delete, contentDescription = "Delete")
                         }
                     },
-                ) { SubscriptionRow(s, today, covers["SUBSCRIPTION:${s.id}"]) { onOpen(s.id) } }
+                ) {
+                    SubscriptionRow(s, today, covers["SUBSCRIPTION:${s.id}"], onKeep = { vm.keepAuto("sub", s.id) }, onDelete = { delete(s) }) { onOpen(s.id) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SubscriptionRow(s: Subscription, today: LocalDate, cover: java.io.File?, onClick: () -> Unit) {
+private fun SubscriptionRow(s: Subscription, today: LocalDate, cover: java.io.File?, onKeep: () -> Unit, onDelete: () -> Unit, onClick: () -> Unit) {
     val next = Renewal.next(s, today)
     OutlinedCard(Modifier.fillMaxWidth().pressScale(onClick)) {
+      Column {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(s.name, cover, icon = categoryIcon(s.category), tint = categoryColor(s.category))
             Spacer(Modifier.width(12.dp))
@@ -153,8 +169,10 @@ private fun SubscriptionRow(s: Subscription, today: LocalDate, cover: java.io.Fi
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(Money.format(s.amountMinor, s.currency), style = MaterialTheme.typography.titleMedium)
-                Text(if (s.active) relativeDay(next, today) else "Paused", style = MaterialTheme.typography.bodySmall)
+                Text(if (s.active) relativeDay(next, today) else "On hold", style = MaterialTheme.typography.bodySmall)
             }
         }
+        if (app.forgetit.domain.AutoTrack.isUnreviewed(s.notes)) app.forgetit.ui.ReviewStrip(!s.active, onKeep, onDelete)
+      }
     }
 }
