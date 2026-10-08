@@ -1,0 +1,56 @@
+package app.forgetit.data
+
+import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import app.forgetit.domain.Rate
+import app.forgetit.domain.RateCodec
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.math.BigDecimal
+import java.time.LocalDate
+
+private val Context.dataStore by preferencesDataStore("settings")
+
+class SettingsStore(private val context: Context) {
+    private object Keys {
+        val currency = stringPreferencesKey("default_currency")
+        val rates = stringPreferencesKey("rates")
+        val reminderMinute = intPreferencesKey("reminder_minute")
+        val theme = stringPreferencesKey("theme")
+        val biometric = booleanPreferencesKey("biometric_lock")
+    }
+
+    val flow: Flow<Settings> = context.dataStore.data.map { p ->
+        val base = Settings()
+        Settings(
+            defaultCurrency = p[Keys.currency] ?: base.defaultCurrency,
+            rates = RateCodec.decode(p[Keys.rates].orEmpty()),
+            reminderMinuteOfDay = (p[Keys.reminderMinute] ?: base.reminderMinuteOfDay).coerceIn(0, 1439),
+            theme = p[Keys.theme]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: base.theme,
+            biometricLock = p[Keys.biometric] ?: base.biometricLock,
+        )
+    }
+
+    private suspend fun update(block: (MutablePreferences) -> Unit) {
+        context.dataStore.edit { block(it) }
+    }
+
+    suspend fun setDefaultCurrency(code: String) = update { it[Keys.currency] = code }
+    suspend fun setReminderMinute(minute: Int) = update { it[Keys.reminderMinute] = minute.coerceIn(0, 1439) }
+    suspend fun setTheme(mode: ThemeMode) = update { it[Keys.theme] = mode.name }
+    suspend fun setBiometric(on: Boolean) = update { it[Keys.biometric] = on }
+
+    suspend fun setRate(currency: String, value: BigDecimal, today: LocalDate) = update {
+        val rates = RateCodec.decode(it[Keys.rates].orEmpty()) + (currency to Rate(value, today))
+        it[Keys.rates] = RateCodec.encode(rates)
+    }
+
+    suspend fun removeRate(currency: String) = update {
+        it[Keys.rates] = RateCodec.encode(RateCodec.decode(it[Keys.rates].orEmpty()) - currency)
+    }
+}
