@@ -51,3 +51,13 @@ Without this setup the Sign in button shows Google's error and the rest of the a
 - **Delta updates**: when a release carries a `delta-<old checksum>-to-<apk>.patch` made for the APK that is installed, only that patch is downloaded (typically under 10 percent of the APK) and applied on the phone; otherwise the whole APK for the phone's architecture is downloaded.
 - **Publishing**: bump `versionName` and `versionCode` in `app/build.gradle.kts`, then run `tools/release.sh` (needs `keystore.properties` with the signing key, and the `gh` CLI). It builds one APK per architecture plus a universal one, writes `SHA256SUMS`, adds patches from the previous release, and creates the release. Use `--dry-run` to build without publishing.
 - **Signing key**: keep `keystore.properties` and the `.jks` file safe and out of git. Updates only install over an app signed with the same key.
+
+## Installing from the APK
+
+Forget-it is installed from a file, so Android adds some safety steps. They are normal for apps outside the Play Store:
+
+1. **"Blocked by Play Protect" or "App not installed as it looks harmful"**: on the warning tap More details, then Install anyway. If there is no such button, open Play Store, tap your profile picture, Play Protect, the gear icon, and turn off Scan apps with Play Protect while you install; turn it back on afterwards. The app asks for SMS access and installing updates, which Play Protect treats cautiously for apps from unknown developers. Newer Android versions are also rolling out a developer-verification check; where it blocks the install, Android offers an Install without verifying option for advanced users, and installing from a computer with `adb install forget-it-<version>-arm64-v8a.apk` works as well.
+2. **Allow installs from your browser or files app** when Android asks.
+3. **SMS and email permissions greyed out or the Allow button does nothing** (Android 13 and later): open Settings, Apps, Forget-it, tap the three-dot menu, choose Allow restricted settings, confirm with your fingerprint or PIN, then go back to Forget-it and allow SMS and notification access. If the menu item is missing, tap Allow in the app once first so Android shows the block, then try again. The app has the same steps under Settings, Capture.
+
+Nothing here sends data anywhere: messages are read on the phone, and only payments are kept.

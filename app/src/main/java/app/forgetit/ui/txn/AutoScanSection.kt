@@ -3,6 +3,7 @@ package app.forgetit.ui.txn
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings as AndroidSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -75,9 +76,11 @@ private fun rememberAccess(): Triple<Boolean, Boolean, () -> Unit> {
 fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit) {
     val ctx = LocalContext.current
     val (sms, mail, refresh) = rememberAccess()
+    var showHelp by remember { mutableStateOf(false) }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         refresh()
-        vm.scanNow { onMessage(scanMessage(it)) }
+        if (SmsScanner.hasPermission(ctx)) vm.scanNow { onMessage(scanMessage(it)) }
+        else { showHelp = true; onMessage("Android did not allow SMS access. Follow the steps below.") }
     }
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -108,6 +111,10 @@ fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit)
                 }
                 OutlinedButton({ openMailAccessSettings(ctx) }) { Text(if (mail) "Manage" else "Allow") }
             }
+            if (!sms || !mail) {
+                TextButton({ showHelp = !showHelp }) { Text(if (showHelp) "Hide help" else "Allow does nothing, or greyed out? Tap for help") }
+                if (showHelp) RestrictedHelp(ctx)
+            }
             GmailRow(vm, s, ctx, onMessage)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Mark an EMI paid when a matching payment is found", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
@@ -131,8 +138,10 @@ fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit)
 /** Shown once on the first launch so that scanning starts without the user hunting for it. */
 @Composable
 fun ScanSetupDialog(vm: MainViewModel, onDone: () -> Unit) {
+    val ctx = LocalContext.current
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        vm.scanNow { }
+        if (SmsScanner.hasPermission(ctx)) vm.scanNow { }
+        else android.widget.Toast.makeText(ctx, "SMS access was not allowed. Open Settings, Capture, for help unlocking it.", android.widget.Toast.LENGTH_LONG).show()
         onDone()
     }
     AlertDialog(
@@ -192,6 +201,28 @@ private fun GmailRow(vm: MainViewModel, s: Settings, ctx: Context, onMessage: (S
         if (s.gmailEmail.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton({ vm.syncGmail { onMessage(gmailMessage(it)) } }) { Text("Sync Gmail") }
             TextButton({ vm.disconnectGmail() }) { Text("Disconnect") }
+        }
+    }
+}
+
+/** Android 13 and later lock SMS and notification access for apps installed from a file until the user allows it in App info. */
+@Composable
+private fun RestrictedHelp(ctx: Context) {
+    androidx.compose.material3.Card(
+        Modifier.fillMaxWidth(),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Unlock SMS and email access", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Android blocks these permissions for apps installed from a file instead of the Play Store. To unlock them:\n" +
+                    "1. Tap Open App info below.\n" +
+                    "2. Tap the three-dot menu at the top right, then Allow restricted settings, and confirm with your fingerprint or PIN.\n" +
+                    "3. Come back here and tap Allow again.\n" +
+                    "If the menu item is not there yet, tap Allow once first so Android shows the block, then repeat step 1.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Button({ ctx.startActivity(Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) { Text("Open App info") }
         }
     }
 }

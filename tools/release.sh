@@ -24,6 +24,7 @@ if [ -n "${PREV:-}" ] && [ "$PREV" != "v$VERSION" ]; then
     abi=$(basename "$old" .apk | sed -E 's/^forget-it-[^-]+(-[^-]+)?-//')
     new="$OUT/forget-it-$VERSION-$abi.apk"
     [ -f "$new" ] || continue
+    [ "$abi" = "universal" ] && continue   # the universal APK is too large to diff comfortably; it is downloaded whole
     sha12=$(sha256sum "$old" | cut -c1-12)
     ./gradlew :app:makeDelta -q -PoldApk="$(pwd)/$old" -PnewApk="$(pwd)/$new" -Ppatch="$(pwd)/$OUT/delta-$sha12-to-$(basename "$new").patch"
   done
