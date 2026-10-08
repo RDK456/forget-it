@@ -19,6 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.Amortization
 import app.forgetit.domain.Money
 import app.forgetit.domain.Renewal
+import app.forgetit.domain.StockEngine
+import app.forgetit.ui.stock.qty
 import app.forgetit.domain.RowStatus
 import app.forgetit.domain.Totals
 import app.forgetit.domain.computeTotals
@@ -49,6 +51,9 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
     val adj by vm.loanAdjustments.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val covers by vm.covers.collectAsStateWithLifecycle()
+    val stockItems by vm.stockItems.collectAsStateWithLifecycle()
+    val stockBatches by vm.stockBatches.collectAsStateWithLifecycle()
+    val stockLogs by vm.stockLogs.collectAsStateWithLifecycle()
     val rates = settings.rates.mapValues { it.value.value }
     val cur = settings.defaultCurrency
     val subTotals = computeTotals(subs, today, cur, rates)
@@ -72,7 +77,22 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
             covers["LOAN:${l.id}"], overdue = row.status == RowStatus.OVERDUE,
         )
     }
-    val upcoming = (subItems + emiItems).sortedBy { it.date }
+    val stockUp = stockItems.filter { it.active }.flatMap { i ->
+        val mine = stockBatches.filter { it.itemId == i.id }
+        val myLogs = stockLogs.filter { it.itemId == i.id }
+        val st = StockEngine.status(i, mine, myLogs, today)
+        val cover = covers["STOCK_ITEM:${i.id}"]
+        buildList {
+            if (st.low && (mine.isNotEmpty() || myLogs.isNotEmpty())) {
+                add(Upcoming("low:${i.id}", i.name, "Running low", today, qty(st.estimatedMilli, i.unit), cover, overdue = true))
+            }
+            mine.filter { it.quantityMilli > 0 && it.expiry != null && !it.expiry.isAfter(horizon) }.forEach { b ->
+                val e = b.expiry!!
+                add(Upcoming("exp:${b.id}", i.name, if (e.isBefore(today)) "Expired" else "Expires", e, qty(b.quantityMilli, i.unit), cover, overdue = e.isBefore(today)))
+            }
+        }
+    }
+    val upcoming = (subItems + emiItems + stockUp).sortedBy { it.date }
 
     ScreenScaffold("Overview", onBack = null) { pad ->
         ListScreen(pad) {

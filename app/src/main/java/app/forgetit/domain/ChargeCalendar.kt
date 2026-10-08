@@ -24,3 +24,14 @@ object ChargeCalendar {
         return out.groupBy { it.date }
     }
 }
+
+/** Batch expiry dates falling inside [month], for active items and batches that still have stock. */
+fun stockCalendarEntries(items: List<StockItem>, batches: List<StockBatch>, month: YearMonth): Map<LocalDate, List<CalendarEntry>> {
+    val byId = items.filter { it.active }.associateBy { it.id }
+    return batches.mapNotNull { b ->
+        val item = byId[b.itemId] ?: return@mapNotNull null
+        val e = b.expiry ?: return@mapNotNull null
+        if (b.quantityMilli <= 0 || YearMonth.from(e) != month) return@mapNotNull null
+        CalendarEntry(e, EntryType.EXPIRY, item.name, "Expires - ${Money.milliToPlain(b.quantityMilli)} ${item.unit}")
+    }.groupBy { it.date }
+}

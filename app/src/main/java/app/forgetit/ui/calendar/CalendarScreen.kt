@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.domain.ChargeCalendar
 import app.forgetit.domain.EntryType
 import app.forgetit.domain.loanCalendarEntries
+import app.forgetit.domain.stockCalendarEntries
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
 import app.forgetit.ui.ScreenScaffold
@@ -55,12 +56,15 @@ fun CalendarScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
     val loans by vm.loans.collectAsStateWithLifecycle()
     val loanPay by vm.loanPayments.collectAsStateWithLifecycle()
     val loanAdj by vm.loanAdjustments.collectAsStateWithLifecycle()
+    val stockItems by vm.stockItems.collectAsStateWithLifecycle()
+    val stockBatches by vm.stockBatches.collectAsStateWithLifecycle()
     var monthIndex by rememberSaveable { mutableStateOf(today.year * 12 + today.monthValue - 1) }
     var selected by rememberSaveable { mutableStateOf<Long?>(today.toEpochDay()) }
     val month = YearMonth.of(monthIndex / 12, monthIndex % 12 + 1)
     val subEntries = ChargeCalendar.subscriptionEntries(subs, month)
     val emiEntries = loanCalendarEntries(loans, loanAdj, loanPay, month, today)
-    val entries = (subEntries.keys + emiEntries.keys).associateWith { subEntries[it].orEmpty() + emiEntries[it].orEmpty() }
+    val expiryEntries = stockCalendarEntries(stockItems, stockBatches, month)
+    val entries = (subEntries.keys + emiEntries.keys + expiryEntries.keys).associateWith { subEntries[it].orEmpty() + emiEntries[it].orEmpty() + expiryEntries[it].orEmpty() }
     val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
     val lead = (month.atDay(1).dayOfWeek.value - first.value + 7) % 7
 

@@ -49,3 +49,19 @@ class CalendarInsightsTest {
         assertEquals(listOf(CategorySlice("Loans", 20000)), ins.slices)
     }
 }
+
+class StockCalendarTest {
+    private val item = StockItem(id = 1, name = "Milk", unit = "L", baselineDate = d("2026-10-01"))
+    private fun b(id: Long, qty: Long, exp: String?) = StockBatch(id = id, itemId = 1, quantityMilli = qty, addedOn = d("2026-10-01"), expiry = exp?.let(::d))
+
+    @Test fun listsExpiriesOfStockedBatchesInTheMonth() {
+        val m = stockCalendarEntries(listOf(item), listOf(b(1, 500, "2026-10-12"), b(2, 0, "2026-10-13"), b(3, 100, "2026-11-01"), b(4, 100, null)), YearMonth.of(2026, 10))
+        assertEquals(listOf(d("2026-10-12")), m.keys.toList())
+        assertEquals(EntryType.EXPIRY, m.getValue(d("2026-10-12")).single().type)
+        assertEquals("Expires - 0.5 L", m.getValue(d("2026-10-12")).single().detail)
+    }
+
+    @Test fun inactiveItemsAreSkipped() {
+        assertTrue(stockCalendarEntries(listOf(item.copy(active = false)), listOf(b(1, 500, "2026-10-12")), YearMonth.of(2026, 10)).isEmpty())
+    }
+}
