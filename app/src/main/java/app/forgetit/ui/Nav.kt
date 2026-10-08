@@ -1,6 +1,13 @@
 package app.forgetit.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -128,5 +135,15 @@ private fun MoreScreen(nav: NavController) {
 @Composable
 private fun EditRoute(id: Long, container: AppContainer, nav: NavController) {
     val evm: EditViewModel = viewModel(key = "edit$id", factory = viewModelFactory { initializer { EditViewModel(container, id) } })
-    EditScreen(evm, onDone = { nav.popBackStack() }, photos = { PhotoSection(container.photos, OwnerType.SUBSCRIPTION, id) })
+    val ctx = LocalContext.current
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    EditScreen(
+        evm, onDone = { nav.popBackStack() },
+        onSaved = {
+            if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            nav.popBackStack()
+        },
+        photos = { PhotoSection(container.photos, OwnerType.SUBSCRIPTION, id) })
 }

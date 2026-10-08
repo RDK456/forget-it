@@ -40,11 +40,11 @@ private fun cycleName(c: Cycle) = when (c) {
 }
 
 @Composable
-fun EditScreen(vm: EditViewModel, onDone: () -> Unit, photos: @Composable () -> Unit = {}) {
+fun EditScreen(vm: EditViewModel, onDone: () -> Unit, onSaved: () -> Unit = onDone, photos: @Composable () -> Unit = {}) {
     val f = vm.form
     val err = vm.errors
     val uri = LocalUriHandler.current
-    LaunchedEffect(vm.savedId) { if (vm.savedId != null) onDone() }
+    LaunchedEffect(vm.savedId) { if (vm.savedId != null) onSaved() }
 
     ScreenScaffold(if (vm.id == 0L) "Add subscription" else "Edit subscription", onBack = onDone) { pad ->
         Column(

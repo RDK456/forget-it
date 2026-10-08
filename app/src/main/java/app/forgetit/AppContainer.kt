@@ -2,15 +2,28 @@ package app.forgetit
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import app.forgetit.data.AppDatabase
+import app.forgetit.data.OwnerType
 import app.forgetit.data.PhotoRepository
 import app.forgetit.data.SettingsStore
 import app.forgetit.data.SubscriptionRepository
+import app.forgetit.reminders.DailyCheckWorker
+import app.forgetit.reminders.Notifications
+import app.forgetit.reminders.Reminders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Clock
+import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 
 class AppContainer(val context: Context) {
     val clock: Clock = Clock.systemDefaultZone()
@@ -20,4 +33,24 @@ class AppContainer(val context: Context) {
     val settings = SettingsStore(context)
     val photos = PhotoRepository(db.photoDao(), File(context.filesDir, "photos").also { it.mkdirs() })
     val subscriptions = SubscriptionRepository(db.subscriptionDao(), photos)
+    val reminders by lazy { Reminders(this) }
+
+    /** Called once from Application.onCreate: channels, housekeeping, the single sync collector, daily worker. */
+    fun start() {
+        Notifications.createChannels(context)
+        appScope.launch {
+            subscriptions.settleTrials(LocalDate.now(clock))
+            photos.sweepOrphans()
+            photos.deleteAll(OwnerType.SUBSCRIPTION, 0)
+        }
+        // Every data or reminder-time change rebuilds alarms through this one path.
+        appScope.launch {
+            combine(subscriptions.observeAll(), settings.flow.map { it.reminderMinuteOfDay }.distinctUntilChanged()) { _, _ -> }
+                .collect { reminders.sync() }
+        }
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "daily-check", ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<DailyCheckWorker>(1, TimeUnit.DAYS).build(),
+        )
+    }
 }
