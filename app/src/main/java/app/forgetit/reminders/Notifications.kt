@@ -19,6 +19,8 @@ object Notifications {
     const val CH_EMI = "emi"
     const val CH_LOW = "low_stock"
     const val CH_EXPIRY = "expiry"
+    const val CH_BILLS = "bills"
+    const val CH_DIGEST = "digest"
 
     private val CHANNELS = listOf(
         Triple(CH_RENEWALS, "Renewals", NotificationManager.IMPORTANCE_DEFAULT),
@@ -26,6 +28,8 @@ object Notifications {
         Triple(CH_EMI, "EMI and loan dues", NotificationManager.IMPORTANCE_HIGH),
         Triple(CH_LOW, "Low stock", NotificationManager.IMPORTANCE_DEFAULT),
         Triple(CH_EXPIRY, "Expiry", NotificationManager.IMPORTANCE_HIGH),
+        Triple(CH_BILLS, "Bills and utilities", NotificationManager.IMPORTANCE_HIGH),
+        Triple(CH_DIGEST, "Weekly summary", NotificationManager.IMPORTANCE_LOW),
     )
 
     val channelIds get() = CHANNELS.map { it.first }
@@ -36,6 +40,8 @@ object Notifications {
         ReminderKind.EMI_DUE -> CH_EMI
         ReminderKind.LOW_STOCK -> CH_LOW
         ReminderKind.EXPIRY -> CH_EXPIRY
+        ReminderKind.BILL_DUE -> CH_BILLS
+        ReminderKind.DIGEST -> CH_DIGEST
     }
 
     fun createChannels(context: Context) {
@@ -43,9 +49,19 @@ object Notifications {
         CHANNELS.forEach { (id, name, importance) -> nm.createNotificationChannel(NotificationChannel(id, name, importance)) }
     }
 
-    @SuppressLint("MissingPermission")
+    private fun snoozeAction(context: Context, spec: ReminderSpec, mode: String, label: String, slot: Int): NotificationCompat.Action {
+        val intent = Intent(context, SnoozeReceiver::class.java).setAction("app.forgetit.SNOOZE_$mode")
+            .putExtra(SnoozeReceiver.EXTRA_KIND, spec.kind.name).putExtra(SnoozeReceiver.EXTRA_TITLE, spec.title)
+            .putExtra(SnoozeReceiver.EXTRA_TEXT, spec.text).putExtra(SnoozeReceiver.EXTRA_MODE, mode)
+            .putExtra(SnoozeReceiver.EXTRA_NOTIFICATION_ID, spec.key.hashCode())
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val pi = PendingIntent.getBroadcast(context, spec.key.hashCode() * 7 + slot, intent, flags)
+        return NotificationCompat.Action.Builder(0, label, pi).build()
+    }
+
     /** True when the notification was handed to the system; false when notifications are blocked. */
-    fun show(context: Context, spec: ReminderSpec): Boolean {
+    @SuppressLint("MissingPermission")
+    fun show(context: Context, spec: ReminderSpec, paydayDay: Int): Boolean {
         val nm = NotificationManagerCompat.from(context)
         if (!nm.areNotificationsEnabled()) return false
         val open = PendingIntent.getActivity(
@@ -53,20 +69,22 @@ object Notifications {
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val n = NotificationCompat.Builder(context, channelFor(spec.kind))
+        val builder = NotificationCompat.Builder(context, channelFor(spec.kind))
             .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle(spec.title)
             .setContentText(spec.text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(spec.text))
             .setContentIntent(open)
             .setAutoCancel(true)
-            .build()
-        try {
-            nm.notify(spec.key.hashCode(), n)
-            return true
+        if (spec.kind != ReminderKind.DIGEST) {
+            builder.addAction(snoozeAction(context, spec, SnoozeReceiver.MODE_DAY, "Snooze 1 day", 1))
+            if (paydayDay in 1..31) builder.addAction(snoozeAction(context, spec, SnoozeReceiver.MODE_PAYDAY, "On payday", 2))
+        }
+        return try {
+            nm.notify(spec.key.hashCode(), builder.build())
+            true
         } catch (e: SecurityException) {
-            // Permission was revoked between the check and the call; nothing to show.
-            return false
+            false
         }
     }
 }

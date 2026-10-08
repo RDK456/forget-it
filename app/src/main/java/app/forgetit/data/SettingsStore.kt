@@ -23,6 +23,8 @@ class SettingsStore(private val context: Context) {
         val reminderMinute = intPreferencesKey("reminder_minute")
         val theme = stringPreferencesKey("theme")
         val biometric = booleanPreferencesKey("biometric_lock")
+        val payday = intPreferencesKey("payday")
+        val digest = booleanPreferencesKey("weekly_digest")
     }
 
     val flow: Flow<Settings> = context.dataStore.data.map { p ->
@@ -33,6 +35,8 @@ class SettingsStore(private val context: Context) {
             reminderMinuteOfDay = (p[Keys.reminderMinute] ?: base.reminderMinuteOfDay).coerceIn(0, 1439),
             theme = p[Keys.theme]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: base.theme,
             biometricLock = p[Keys.biometric] ?: base.biometricLock,
+            paydayDay = (p[Keys.payday] ?: base.paydayDay).coerceIn(0, 31),
+            weeklyDigest = p[Keys.digest] ?: base.weeklyDigest,
         )
     }
 
@@ -44,6 +48,8 @@ class SettingsStore(private val context: Context) {
     suspend fun setReminderMinute(minute: Int) = update { it[Keys.reminderMinute] = minute.coerceIn(0, 1439) }
     suspend fun setTheme(mode: ThemeMode) = update { it[Keys.theme] = mode.name }
     suspend fun setBiometric(on: Boolean) = update { it[Keys.biometric] = on }
+    suspend fun setPayday(day: Int) = update { it[Keys.payday] = day.coerceIn(0, 31) }
+    suspend fun setWeeklyDigest(on: Boolean) = update { it[Keys.digest] = on }
 
     suspend fun setRate(currency: String, value: BigDecimal, today: LocalDate) = update {
         val rates = RateCodec.decode(it[Keys.rates].orEmpty()) + (currency to Rate(value, today))

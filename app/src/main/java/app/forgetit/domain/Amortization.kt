@@ -34,6 +34,7 @@ object Amortization {
         if (loan.tenureMonths !in 1..600) add(ValidationError("tenure", "Tenure must be 1 to 600 months"))
         if (loan.emiOverrideMinor != null && loan.emiOverrideMinor <= 0) add(ValidationError("emi", "EMI must be above zero"))
         if (loan.remindDaysBefore !in 0..30) add(ValidationError("remindDaysBefore", "Choose 0 to 30 days"))
+        if (loan.extraRemindDays.any { it !in 0..30 }) add(ValidationError("extraRemind", "Extra reminders must be 0 to 30 days"))
         if (isEmpty() && loan.tenureMonths > 1 && baseEmi(loan) <= interestOn(loan.principalMinor, monthlyRate(loan))) {
             add(ValidationError("emi", "EMI is too low to ever repay the loan"))
         }

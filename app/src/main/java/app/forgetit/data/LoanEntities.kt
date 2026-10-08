@@ -1,5 +1,6 @@
 package app.forgetit.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import app.forgetit.domain.AdjustmentKind
@@ -7,6 +8,7 @@ import app.forgetit.domain.Loan
 import app.forgetit.domain.LoanAdjustment
 import app.forgetit.domain.LoanPayment
 import app.forgetit.domain.LoanType
+import app.forgetit.domain.Offsets
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -25,16 +27,21 @@ data class LoanEntity(
     val remindDaysBefore: Int,
     val notes: String,
     val active: Boolean,
+    @ColumnInfo(defaultValue = "''") val extraRemind: String = "",
 )
 
 fun LoanEntity.toDomain() = Loan(
-    id, name, lender, LoanType.valueOf(type), principalMinor, currency, BigDecimal(annualRatePercent), tenureMonths,
-    LocalDate.ofEpochDay(firstEmiEpochDay), emiOverrideMinor, remindDaysBefore, notes, active,
+    id = id, name = name, lender = lender, type = LoanType.valueOf(type), principalMinor = principalMinor, currency = currency,
+    annualRatePercent = BigDecimal(annualRatePercent), tenureMonths = tenureMonths, firstEmiDate = LocalDate.ofEpochDay(firstEmiEpochDay),
+    emiOverrideMinor = emiOverrideMinor, remindDaysBefore = remindDaysBefore, extraRemindDays = Offsets.parse(extraRemind),
+    notes = notes, active = active,
 )
 
 fun Loan.toEntity() = LoanEntity(
-    id, name.trim(), lender.trim(), type.name, principalMinor, currency, annualRatePercent.toPlainString(), tenureMonths,
-    firstEmiDate.toEpochDay(), emiOverrideMinor, remindDaysBefore, notes, active,
+    id = id, name = name.trim(), lender = lender.trim(), type = type.name, principalMinor = principalMinor, currency = currency,
+    annualRatePercent = annualRatePercent.toPlainString(), tenureMonths = tenureMonths, firstEmiEpochDay = firstEmiDate.toEpochDay(),
+    emiOverrideMinor = emiOverrideMinor, remindDaysBefore = remindDaysBefore, notes = notes, active = active,
+    extraRemind = Offsets.format(extraRemindDays),
 )
 
 @Entity(tableName = "loan_payment")

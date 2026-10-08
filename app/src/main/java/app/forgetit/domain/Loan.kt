@@ -19,6 +19,7 @@ data class Loan(
     val firstEmiDate: LocalDate,
     val emiOverrideMinor: Long? = null,
     val remindDaysBefore: Int = 2,
+    val extraRemindDays: List<Int> = emptyList(),
     val notes: String = "",
     val active: Boolean = true,
 )

@@ -53,3 +53,29 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_txn_dedupe ON txn (dedupe)")
     }
 }
+
+/** Bills, snoozed reminders, several reminder lead times, and the stock pack size, lead time, brand, store and price. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS bill (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, type TEXT NOT NULL, " +
+                "currency TEXT NOT NULL, cycle TEXT NOT NULL, customDays INTEGER, anchorEpochDay INTEGER NOT NULL, " +
+                "remindDaysBefore INTEGER NOT NULL, extraRemind TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL, active INTEGER NOT NULL)",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS bill_entry (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, billId INTEGER NOT NULL, " +
+                "dueEpochDay INTEGER NOT NULL, amountMinor INTEGER NOT NULL, paidEpochDay INTEGER)",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS snooze (snoozeKey TEXT NOT NULL, kind TEXT NOT NULL, title TEXT NOT NULL, text TEXT NOT NULL, " +
+                "triggerAtMillis INTEGER NOT NULL, PRIMARY KEY(snoozeKey))",
+        )
+        db.execSQL("ALTER TABLE subscription ADD COLUMN extraRemind TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE loan ADD COLUMN extraRemind TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE stock_item ADD COLUMN packSizeMilli INTEGER")
+        db.execSQL("ALTER TABLE stock_item ADD COLUMN leadDays INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE stock_item ADD COLUMN brand TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE stock_item ADD COLUMN store TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE stock_log ADD COLUMN priceMinor INTEGER")
+    }
+}

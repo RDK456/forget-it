@@ -12,6 +12,8 @@ data class Settings(
     val reminderMinuteOfDay: Int = 9 * 60,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val biometricLock: Boolean = false,
+    val paydayDay: Int = 0,
+    val weeklyDigest: Boolean = true,
 )
 
 fun currencyFromLocale(): String =

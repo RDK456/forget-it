@@ -51,3 +51,44 @@ class FunStatsTest {
         assertEquals("Shopping list from Forget-it\n- Milk: about 1 L (running low)", t)
     }
 }
+
+class ShoppingUpgradeTest {
+    private val today = d("2026-10-08")
+    private fun item(id: Long, name: String, store: String = "", pack: Long? = null, lead: Int = 0, usage: Long? = null) =
+        StockItem(id = id, name = name, unit = "L", lowThresholdMilli = 500, dailyUsageMilli = usage, baselineDate = today, store = store, packSizeMilli = pack, leadDays = lead)
+    private fun batch(itemId: Long, qty: Long) = StockBatch(itemId = itemId, quantityMilli = qty, addedOn = d("2026-10-01"))
+
+    @Test fun suggestedAmountRoundsUpToWholePacks() {
+        val l = shoppingList(listOf(item(1, "Water", pack = 5000)), listOf(batch(1, 100)), emptyList(), today).single()
+        assertEquals(5000L, l.buyMilli)
+        val week = shoppingList(listOf(item(2, "Rice", pack = 1000, usage = 600)), listOf(batch(2, 100)), emptyList(), today).single()
+        assertEquals(5000L, week.buyMilli)
+    }
+
+    @Test fun buyByAllowsForDeliveryLeadTime() {
+        val l = shoppingList(listOf(item(1, "Gas", lead = 3, usage = 100)), listOf(batch(1, 450)), emptyList(), today).single()
+        assertEquals(d("2026-10-09"), l.buyBy)
+        val ok = shoppingList(listOf(item(2, "Gas", lead = 1, usage = 100)), listOf(batch(2, 450)), emptyList(), today).single()
+        assertEquals(d("2026-10-11"), ok.buyBy)
+    }
+
+    @Test fun sharedTextGroupsByStoreWhenThereAreSeveral() {
+        val lines = shoppingList(listOf(item(1, "Milk", store = "Dairy shop"), item(2, "Soap", store = "Mall")), listOf(batch(1, 100), batch(2, 100)), emptyList(), today)
+        assertEquals(
+            "Shopping list from Forget-it\nDairy shop:\n- Milk: about 1 L (running low)\nMall:\n- Soap: about 1 L (running low)",
+            shoppingText(lines),
+        )
+    }
+
+    @Test fun priceHistoryAndTrend() {
+        val logs = listOf(
+            StockLog(itemId = 1, date = d("2026-09-01"), deltaMilli = 1000, kind = LogKind.RESTOCK, priceMinor = 5000),
+            StockLog(itemId = 1, date = d("2026-10-01"), deltaMilli = 1000, kind = LogKind.RESTOCK, priceMinor = 5500),
+            StockLog(itemId = 1, date = d("2026-10-02"), deltaMilli = -100, kind = LogKind.USED, priceMinor = 9999),
+        )
+        val h = StockPrices.history(logs)
+        assertEquals(listOf(5000L, 5500L), h.map { it.priceMinor })
+        assertEquals(10, StockPrices.trendPercent(h))
+        assertEquals(null, StockPrices.trendPercent(h.take(1)))
+    }
+}

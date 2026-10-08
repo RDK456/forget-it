@@ -39,10 +39,10 @@ class StockRepository(private val dao: StockDao, private val photos: PhotoReposi
         dao.getItem(itemId)?.let { dao.upsertItem(it.copy(baselineEpochDay = today.toEpochDay())) }
     }
 
-    suspend fun restock(itemId: Long, quantityMilli: Long, expiry: LocalDate?, today: LocalDate): ValidationError? {
+    suspend fun restock(itemId: Long, quantityMilli: Long, expiry: LocalDate?, today: LocalDate, priceMinor: Long? = null): ValidationError? {
         StockValidator.validateBatch(quantityMilli)?.let { return it }
         dao.insertBatch(StockBatch(itemId = itemId, quantityMilli = quantityMilli, addedOn = today, expiry = expiry).toEntity())
-        dao.insertLog(StockLog(itemId = itemId, date = today, deltaMilli = quantityMilli, kind = LogKind.RESTOCK).toEntity())
+        dao.insertLog(StockLog(itemId = itemId, date = today, deltaMilli = quantityMilli, kind = LogKind.RESTOCK, priceMinor = priceMinor).toEntity())
         rebase(itemId, today)
         return null
     }
@@ -71,5 +71,12 @@ class StockRepository(private val dao: StockDao, private val photos: PhotoReposi
         val id = dao.upsertItem(b.item.copy(id = 0).toEntity())
         b.batches.forEach { dao.insertBatch(it.copy(itemId = id).toEntity()) }
         b.logs.forEach { dao.insertLog(it.copy(itemId = id).toEntity()) }
+    }
+
+    /** Uses everything that is still good, so the item shows as finished. */
+    suspend fun finish(itemId: Long, today: LocalDate): UseResult {
+        val usable = dao.batchesFor(itemId).map { it.toDomain() }
+            .filter { it.expiry == null || !it.expiry.isBefore(today) }.sumOf { it.quantityMilli }
+        return use(itemId, usable, today)
     }
 }

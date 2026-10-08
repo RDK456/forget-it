@@ -22,6 +22,7 @@ data class Subscription(
     val isTrial: Boolean = false,
     val trialEndsAt: LocalDate? = null,
     val remindDaysBefore: Int = 2,
+    val extraRemindDays: List<Int> = emptyList(),
     val active: Boolean = true,
 )
 

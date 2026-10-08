@@ -9,7 +9,9 @@ import app.forgetit.data.AppDatabase
 import app.forgetit.data.LoanRepository
 import app.forgetit.data.MIGRATION_1_2
 import app.forgetit.data.MIGRATION_2_3
+import app.forgetit.data.BillRepository
 import app.forgetit.data.MIGRATION_3_4
+import app.forgetit.data.MIGRATION_4_5
 import app.forgetit.data.TxnRepository
 import app.forgetit.data.StockRepository
 import app.forgetit.data.OwnerType
@@ -38,13 +40,14 @@ class AppContainer(val context: Context) {
     /** Incremented to fire the app-wide confetti overlay. */
     val confetti = kotlinx.coroutines.flow.MutableStateFlow(0)
 
-    val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+    val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
     val settings = SettingsStore(context)
     val photos = PhotoRepository(db.photoDao(), File(context.filesDir, "photos").also { it.mkdirs() })
     val subscriptions = SubscriptionRepository(db.subscriptionDao(), photos)
     val loans = LoanRepository(db.loanDao(), photos)
     val stock = StockRepository(db.stockDao(), photos)
     val txns = TxnRepository(db.txnDao())
+    val bills = BillRepository(db.billDao(), photos)
     val reminders by lazy { Reminders(this) }
 
     /** Called once from Application.onCreate: channels, housekeeping, the single sync collector, daily worker. */
@@ -59,12 +62,14 @@ class AppContainer(val context: Context) {
         appScope.launch {
             combine(
                 subscriptions.observeAll(), loans.observeLoans(), loans.observePayments(), loans.observeAdjustments(),
-                settings.flow.map { it.reminderMinuteOfDay }.distinctUntilChanged(),
+                settings.flow.map { Triple(it.reminderMinuteOfDay, it.weeklyDigest, it.paydayDay) }.distinctUntilChanged(),
             ) { _, _, _, _, _ -> }
                 .collect { reminders.sync() }
         }
         appScope.launch {
-            combine(stock.observeItems(), stock.observeBatches(), stock.observeLogs()) { _, _, _ -> }
+            combine(
+                bills.observeBills(), bills.observeEntries(), stock.observeItems(), stock.observeBatches(), stock.observeLogs(),
+            ) { _, _, _, _, _ -> }
                 .collect { reminders.sync() }
         }
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(

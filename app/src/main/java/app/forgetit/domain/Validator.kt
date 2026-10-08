@@ -16,6 +16,7 @@ object Validator {
             add(ValidationError("customDays", "Enter 1 to 3650 days"))
         if (s.isTrial && s.trialEndsAt == null) add(ValidationError("trialEndsAt", "Pick the trial end date"))
         if (s.remindDaysBefore !in 0..30) add(ValidationError("remindDaysBefore", "Choose 0 to 30 days"))
+        if (s.extraRemindDays.any { it !in 0..30 }) add(ValidationError("extraRemind", "Extra reminders must be 0 to 30 days"))
         if (s.category !in CATEGORIES) add(ValidationError("category", "Unknown category"))
         if (!s.cancelUrl.isNullOrBlank() && !isHttpUrl(s.cancelUrl))
             add(ValidationError("cancelUrl", "Enter a web address starting with http:// or https://"))

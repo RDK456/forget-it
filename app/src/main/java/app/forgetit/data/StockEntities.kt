@@ -1,5 +1,6 @@
 package app.forgetit.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import app.forgetit.domain.LogKind
@@ -20,14 +21,22 @@ data class StockItemEntity(
     val baselineEpochDay: Long,
     val notes: String,
     val active: Boolean,
+    val packSizeMilli: Long? = null,
+    @ColumnInfo(defaultValue = "0") val leadDays: Int = 0,
+    @ColumnInfo(defaultValue = "''") val brand: String = "",
+    @ColumnInfo(defaultValue = "''") val store: String = "",
 )
 
 fun StockItemEntity.toDomain() = StockItem(
-    id, name, unit, category, lowThresholdMilli, dailyUsageMilli, expiryAlertDays, LocalDate.ofEpochDay(baselineEpochDay), notes, active,
+    id = id, name = name, unit = unit, category = category, lowThresholdMilli = lowThresholdMilli, dailyUsageMilli = dailyUsageMilli,
+    expiryAlertDays = expiryAlertDays, baselineDate = LocalDate.ofEpochDay(baselineEpochDay), notes = notes, active = active,
+    packSizeMilli = packSizeMilli, leadDays = leadDays, brand = brand, store = store,
 )
 
 fun StockItem.toEntity() = StockItemEntity(
-    id, name.trim(), unit.trim(), category, lowThresholdMilli, dailyUsageMilli, expiryAlertDays, baselineDate.toEpochDay(), notes, active,
+    id = id, name = name.trim(), unit = unit.trim(), category = category, lowThresholdMilli = lowThresholdMilli, dailyUsageMilli = dailyUsageMilli,
+    expiryAlertDays = expiryAlertDays, baselineEpochDay = baselineDate.toEpochDay(), notes = notes, active = active,
+    packSizeMilli = packSizeMilli, leadDays = leadDays, brand = brand.trim(), store = store.trim(),
 )
 
 @Entity(tableName = "stock_batch")
@@ -49,7 +58,8 @@ data class StockLogEntity(
     val epochDay: Long,
     val deltaMilli: Long,
     val kind: String,
+    val priceMinor: Long? = null,
 )
 
-fun StockLogEntity.toDomain() = StockLog(id, itemId, LocalDate.ofEpochDay(epochDay), deltaMilli, LogKind.valueOf(kind))
-fun StockLog.toEntity() = StockLogEntity(id, itemId, date.toEpochDay(), deltaMilli, kind.name)
+fun StockLogEntity.toDomain() = StockLog(id, itemId, LocalDate.ofEpochDay(epochDay), deltaMilli, LogKind.valueOf(kind), priceMinor)
+fun StockLog.toEntity() = StockLogEntity(id, itemId, date.toEpochDay(), deltaMilli, kind.name, priceMinor)

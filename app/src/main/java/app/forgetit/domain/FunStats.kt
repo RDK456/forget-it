@@ -14,9 +14,15 @@ fun onTimeStreak(rows: List<ScheduleRow>, payments: List<LoanPayment>): Int {
     return n
 }
 
-data class ShoppingLine(val itemId: Long, val name: String, val unit: String, val leftMilli: Long, val buyMilli: Long, val reason: String)
+data class ShoppingLine(
+    val itemId: Long, val name: String, val unit: String, val leftMilli: Long, val buyMilli: Long, val reason: String,
+    val store: String = "", val buyBy: LocalDate? = null,
+)
 
-/** Items that are low, out, or have an expired batch, with a suggested amount to buy (a week of usage, else twice the warning level). */
+/**
+ * Items that are low, out, or have an expired batch. The suggested amount is a week of usage, else twice the warning level
+ * (at least one unit), rounded up to whole packs. [ShoppingLine.buyBy] allows for the item delivery lead time.
+ */
 fun shoppingList(items: List<StockItem>, batches: List<StockBatch>, logs: List<StockLog>, today: LocalDate): List<ShoppingLine> =
     items.filter { it.active }.mapNotNull { i ->
         val mine = batches.filter { it.itemId == i.id }
@@ -30,9 +36,18 @@ fun shoppingList(items: List<StockItem>, batches: List<StockBatch>, logs: List<S
             else -> return@mapNotNull null
         }
         val week = st.ratePerDayMilli?.multiply(java.math.BigDecimal(7))?.toLong() ?: 0L
-        val buy = maxOf(week, i.lowThresholdMilli * 2, 1000L)
-        ShoppingLine(i.id, i.name, i.unit, st.estimatedMilli, buy, reason)
-    }.sortedBy { it.name.lowercase() }
+        val need = maxOf(week, i.lowThresholdMilli * 2, 1000L)
+        val pack = i.packSizeMilli?.takeIf { it > 0 }
+        val buy = if (pack != null) ((need + pack - 1) / pack) * pack else need
+        val by = (st.runOut ?: today).minusDays(i.leadDays.toLong()).let { if (it.isBefore(today)) today else it }
+        ShoppingLine(i.id, i.name, i.unit, st.estimatedMilli, buy, reason, i.store.trim(), by)
+    }.sortedWith(compareBy({ it.store.lowercase() }, { it.name.lowercase() }))
 
-fun shoppingText(lines: List<ShoppingLine>): String =
-    "Shopping list from Forget-it\n" + lines.joinToString("\n") { "- ${it.name}: about ${Money.milliToPlain(it.buyMilli)} ${it.unit} (${it.reason.lowercase()})" }
+fun shoppingText(lines: List<ShoppingLine>): String {
+    val groups = lines.groupBy { it.store.ifBlank { "Anywhere" } }
+    val body = groups.entries.joinToString("\n") { (store, list) ->
+        (if (groups.size > 1) "$store:\n" else "") +
+            list.joinToString("\n") { "- ${it.name}: about ${Money.milliToPlain(it.buyMilli)} ${it.unit} (${it.reason.lowercase()})" }
+    }
+    return "Shopping list from Forget-it\n$body"
+}
