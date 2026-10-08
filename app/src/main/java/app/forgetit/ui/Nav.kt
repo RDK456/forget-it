@@ -46,6 +46,10 @@ import app.forgetit.data.OwnerType
 import app.forgetit.ui.calendar.CalendarScreen
 import app.forgetit.ui.edit.EditScreen
 import app.forgetit.ui.insights.InsightsScreen
+import app.forgetit.ui.loans.LoanDetailScreen
+import app.forgetit.ui.loans.LoanEditScreen
+import app.forgetit.ui.loans.LoanEditViewModel
+import app.forgetit.ui.loans.LoansScreen
 import app.forgetit.ui.settings.SettingsScreen
 import app.forgetit.ui.photos.PhotoSection
 import app.forgetit.ui.edit.EditViewModel
@@ -98,7 +102,9 @@ fun ForgetItRoot(container: AppContainer) {
             composable("subs") {
                 SubscriptionsScreen(vm, today, onAdd = { nav.navigate("edit/0") }, onOpen = { nav.navigate("edit/$it") })
             }
-            composable("loans") { ComingSoon("Loans") }
+            composable("loans") { LoansScreen(vm, today, onAdd = { nav.navigate("loanedit/0") }, onOpen = { nav.navigate("loan/$it") }) }
+            composable("loan/{id}") { e -> LoanRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, vm, today, container, nav) }
+            composable("loanedit/{id}") { e -> LoanEditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
             composable("stock") { ComingSoon("Stock") }
             composable("more") { MoreScreen(nav) }
             composable("calendar") { CalendarScreen(vm, today, onBack = { nav.popBackStack() }) }
@@ -149,4 +155,34 @@ private fun EditRoute(id: Long, container: AppContainer, nav: NavController) {
             nav.popBackStack()
         },
         photos = { PhotoSection(container.photos, OwnerType.SUBSCRIPTION, id) })
+}
+
+/** Returns a function that asks for the notification permission when it is not granted yet (Android 13+). */
+@Composable
+private fun rememberNotificationAsker(): () -> Unit {
+    val ctx = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    return {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}
+
+@Composable
+private fun LoanRoute(id: Long, vm: MainViewModel, today: LocalDate, container: AppContainer, nav: NavController) {
+    LoanDetailScreen(
+        vm, id, today, onBack = { nav.popBackStack() }, onEdit = { nav.navigate("loanedit/$id") },
+        photos = { PhotoSection(container.photos, OwnerType.LOAN, id) },
+    )
+}
+
+@Composable
+private fun LoanEditRoute(id: Long, container: AppContainer, nav: NavController) {
+    val evm: LoanEditViewModel = viewModel(key = "loanedit$id", factory = viewModelFactory { initializer { LoanEditViewModel(container, id) } })
+    val ask = rememberNotificationAsker()
+    LoanEditScreen(
+        evm, onDone = { nav.popBackStack() }, onSaved = { ask(); nav.popBackStack() },
+        photos = { PhotoSection(container.photos, OwnerType.LOAN, id) },
+    )
 }

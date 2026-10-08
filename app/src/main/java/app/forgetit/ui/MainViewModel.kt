@@ -61,4 +61,19 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         }
         onDone(msg)
     }
+
+    val loans = c.loans.observeLoans().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val loanPayments = c.loans.observePayments().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val loanAdjustments = c.loans.observeAdjustments().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun deleteLoan(id: Long) = viewModelScope.launch { c.loans.delete(id) }
+
+    fun markPaid(loanId: Long, no: Int, amountMinor: Long) =
+        viewModelScope.launch { c.loans.markPaid(loanId, no, java.time.LocalDate.now(c.clock), amountMinor) }
+
+    fun unmarkPaid(loanId: Long, no: Int) = viewModelScope.launch { c.loans.unmarkPaid(loanId, no) }
+
+    fun addAdjustment(a: app.forgetit.domain.LoanAdjustment) = viewModelScope.launch { c.loans.addAdjustment(a) }
+
+    fun deleteAdjustment(id: Long) = viewModelScope.launch { c.loans.deleteAdjustment(id) }
 }
