@@ -61,7 +61,7 @@ object SmsParser {
         else AMOUNT_LAST.find(text)?.let { it.groupValues[2] to it.groupValues[1] } ?: return null
         val currency = currencyOf(curToken, defaultCurrency)
         val minor = Money.parseMinor(amountText.replace(",", ""), currency)?.takeIf { it > 0 } ?: return null
-        val merchant = MERCHANT.findAll(text).mapNotNull { cleanMerchant(it.groupValues[1]) }.firstOrNull()
+        val merchant = MERCHANT.findAll(text).mapNotNull { cleanMerchant(it.groupValues[1]) }.firstOrNull()?.let(Merchants::canonical)
         val account = ACCOUNT.find(text)?.groupValues?.get(1)
         return ParsedTxn(direction, minor, currency, merchant, account, receivedOn)
     }

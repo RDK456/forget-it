@@ -176,6 +176,10 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     fun setPayday(day: Int) = viewModelScope.launch { c.settings.setPayday(day) }
     fun setWeeklyDigest(on: Boolean) = viewModelScope.launch { c.settings.setWeeklyDigest(on) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
+    fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }
+    fun applyPriceChange(pc: app.forgetit.domain.PriceChange) = viewModelScope.launch {
+        c.subscriptions.get(pc.subscriptionId)?.let { c.subscriptions.save(it.copy(amountMinor = pc.newMinor)) }
+    }
     fun markScanPrompted() = viewModelScope.launch { c.settings.setScanPrompted(true) }
     /** Reads the SMS inbox now, whether or not auto-scan is on. */
     fun scanNow(onDone: (Int) -> Unit) = viewModelScope.launch { onDone(app.forgetit.txn.AutoScan.scanDue(c, force = true)) }

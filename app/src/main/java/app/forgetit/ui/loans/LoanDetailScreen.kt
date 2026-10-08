@@ -125,7 +125,11 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
     when (dialog) {
         "prepay" -> AmountDialog("Prepayment", "How much did you prepay today?", cur, true, { amt, kind ->
             vm.addAdjustment(LoanAdjustment(loanId = loanId, date = today, kind = kind, amountMinor = amt)); dialog = null
-        }, { dialog = null })
+        }, { dialog = null }, preview = { amt, kind ->
+            val r = app.forgetit.domain.PrepayWhatIf.run(loan, myAdj, pay.filter { it.loanId == loanId }, today, amt, kind)
+            "Saves ${money(r.interestSavedMinor)} interest. " +
+                if (r.installmentsSaved > 0) "${r.installmentsSaved} fewer EMIs, debt-free ${r.newPayoff}." else "EMI becomes ${money(r.newEmiMinor)}."
+        })
         "balance" -> AmountDialog("Set outstanding balance", "Enter the outstanding principal from your lender statement as of today.", cur, false, { amt, _ ->
             vm.addAdjustment(LoanAdjustment(loanId = loanId, date = today, kind = AdjustmentKind.BALANCE_RESET, amountMinor = amt)); dialog = null
         }, { dialog = null })

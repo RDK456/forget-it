@@ -104,6 +104,10 @@ fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit)
                 }
                 OutlinedButton({ openMailAccessSettings(ctx) }) { Text(if (mail) "Manage" else "Allow") }
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Mark an EMI paid when a matching payment is found", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                Switch(s.autoMarkEmi, vm::setAutoMarkEmi)
+            }
             if (sms) OutlinedButton({ vm.scanNow { onMessage(scanMessage(it)) } }, Modifier.fillMaxWidth()) { Text("Scan now") }
             Text("Emails can also be shared: open one, tap Share, choose Forget-it.", style = MaterialTheme.typography.bodySmall)
         }

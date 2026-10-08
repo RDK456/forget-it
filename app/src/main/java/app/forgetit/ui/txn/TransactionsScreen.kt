@@ -51,6 +51,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
     val month = YearMonth.from(today)
     val thisMonth = live.filter { YearMonth.from(it.date) == month }
     val suggestions = TxnMatching.recurring(live, subs.map { it.name } + loans.map { it.name })
+    val priceChanges = app.forgetit.domain.PriceWatch.changes(live, subs, today)
     val emi = TxnMatching.emiMatches(live, loans, adj, pay, today)
 
     ScreenScaffold("Transactions", onBack) { pad ->
@@ -60,6 +61,21 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
             val spent = thisMonth.filter { it.direction == TxnDirection.DEBIT }.groupBy { it.currency }.mapValues { e -> e.value.sumOf { it.amountMinor } }
             if (spent.isNotEmpty()) item {
                 Text("Spent this month: " + spent.entries.joinToString(", ") { Money.format(it.value, it.key) }, style = MaterialTheme.typography.titleMedium)
+            }
+            if (priceChanges.isNotEmpty()) item { Text("Price changes", style = MaterialTheme.typography.titleMedium) }
+            items(priceChanges, key = { "pc${it.txnId}" }) { pc ->
+                OutlinedCard(Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("${pc.name} now charges ${Money.format(pc.newMinor, pc.currency)}", style = MaterialTheme.typography.titleMedium)
+                            Text("You track ${Money.format(pc.oldMinor, pc.currency)}. Seen on ${pc.seenOn}.", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Button({ vm.applyPriceChange(pc) }) { Text("Update") }
+                            TextButton({ vm.setTxnStatus(pc.txnId, "IGNORED") }) { Text("Ignore") }
+                        }
+                    }
+                }
             }
             if (suggestions.isNotEmpty()) item { Text("Looks like subscriptions", style = MaterialTheme.typography.titleMedium) }
             items(suggestions, key = { "sg${it.merchant}${it.currency}" }) { s ->

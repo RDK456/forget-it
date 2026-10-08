@@ -91,8 +91,13 @@ object Notifications {
     }
 
     /** Quiet note after a background scan found new payments to review. */
+    fun showFound(context: Context, count: Int) = showInfo(
+        context, 7001, "Forget-it scanned your messages",
+        if (count == 1) "1 new payment found. Open Transactions to review." else "$count new payments found. Open Transactions to review.",
+    )
+
     @SuppressLint("MissingPermission")
-    fun showFound(context: Context, count: Int) {
+    fun showInfo(context: Context, id: Int, title: String, text: String) {
         val nm = NotificationManagerCompat.from(context)
         if (!nm.areNotificationsEnabled()) return
         val open = PendingIntent.getActivity(
@@ -100,9 +105,9 @@ object Notifications {
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val text = if (count == 1) "1 new payment found. Open Transactions to review." else "$count new payments found. Open Transactions to review."
         val n = NotificationCompat.Builder(context, CH_FOUND).setSmallIcon(R.drawable.ic_launcher)
-            .setContentTitle("Forget-it scanned your messages").setContentText(text).setContentIntent(open).setAutoCancel(true).build()
-        try { nm.notify(7001, n) } catch (_: SecurityException) {}
+            .setContentTitle(title).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(open).setAutoCancel(true).build()
+        try { nm.notify(id, n) } catch (_: SecurityException) {}
     }
 }
