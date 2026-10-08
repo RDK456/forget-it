@@ -28,6 +28,10 @@ import app.forgetit.domain.AdjustmentKind
 import app.forgetit.domain.Amortization
 import app.forgetit.domain.LoanAdjustment
 import app.forgetit.domain.Money
+import app.forgetit.domain.onTimeStreak
+import app.forgetit.ui.FunIcons
+import app.forgetit.ui.pulse
+import androidx.compose.foundation.layout.size
 import app.forgetit.domain.RowStatus
 import app.forgetit.ui.ListScreen
 import app.forgetit.ui.MainViewModel
@@ -60,6 +64,11 @@ fun LoanDetailScreen(vm: MainViewModel, loanId: Long, today: LocalDate, onBack: 
                         Text("Interest still to pay: ${money(s.interestRemainingMinor)}")
                         s.payoffDate?.let { Text("Debt-free on $it") }
                         if (s.completed) Text("All installments paid", color = MaterialTheme.colorScheme.primary)
+                        val streak = onTimeStreak(s.rows, pay.filter { it.loanId == loanId })
+                        if (streak >= 2) Row(Modifier.padding(top = 4.dp).pulse(), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(FunIcons.Streak, null, Modifier.size(18.dp), tint = androidx.compose.ui.graphics.Color(0xFFD98E04))
+                            Text("  $streak on-time payments in a row", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
             }

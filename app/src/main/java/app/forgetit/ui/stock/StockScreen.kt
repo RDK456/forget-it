@@ -1,5 +1,10 @@
 package app.forgetit.ui.stock
 
+import app.forgetit.ui.enterStagger
+import app.forgetit.ui.EmptyState
+import app.forgetit.ui.categoryColor
+import app.forgetit.ui.categoryIcon
+import app.forgetit.ui.loanIcon
 import app.forgetit.ui.pressScale
 import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.clickable
@@ -57,7 +62,8 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
         floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add item") } },
     ) { pad ->
         ListScreen(pad) {
-            if (items.isEmpty()) item { Text("No items yet. Tap + to add milk, rice or anything you run out of.") }
+            item { ShoppingCard(app.forgetit.domain.shoppingList(items, batches, logs, today)) }
+            if (items.isEmpty()) item { EmptyState(AppIcons.Stock, "Your shelf is empty", "Add milk, rice or anything you keep running out of. Forget-it will warn you before it does.") }
             for (g in Group.entries) {
                 val list = grouped[g].orEmpty().sortedBy { it.first.name.lowercase() }
                 if (list.isEmpty()) continue
@@ -70,9 +76,9 @@ fun StockScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
 
 @Composable
 private fun StockCard(i: StockItem, s: StockStatus, today: LocalDate, cover: java.io.File?, onClick: () -> Unit) {
-    OutlinedCard(Modifier.fillMaxWidth().pressScale(onClick)) {
+    OutlinedCard(Modifier.fillMaxWidth().enterStagger(0, "stock${i.id}").pressScale(onClick)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(i.name, cover)
+            Avatar(i.name, cover, icon = categoryIcon(i.category), tint = categoryColor(i.category))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(i.name, style = MaterialTheme.typography.titleMedium)

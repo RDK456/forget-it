@@ -43,4 +43,11 @@ class LoanRepository(private val dao: LoanDao, private val photos: PhotoReposito
     suspend fun addAdjustment(a: LoanAdjustment) { dao.insertAdjustment(a.toEntity()) }
 
     suspend fun deleteAdjustment(id: Long) = dao.deleteAdjustment(id)
+
+    /** Adds an imported loan with its payments and adjustments as a new loan. */
+    suspend fun importBundle(b: app.forgetit.domain.LoanBundle) {
+        val id = dao.upsertLoan(b.loan.copy(id = 0).toEntity())
+        b.payments.forEach { dao.insertPayment(it.copy(loanId = id).toEntity()) }
+        b.adjustments.forEach { dao.insertAdjustment(it.copy(loanId = id).toEntity()) }
+    }
 }

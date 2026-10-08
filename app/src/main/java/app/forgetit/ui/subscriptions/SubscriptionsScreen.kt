@@ -1,5 +1,10 @@
 package app.forgetit.ui.subscriptions
 
+import app.forgetit.ui.EmptyState
+import app.forgetit.ui.enterStagger
+import app.forgetit.ui.categoryColor
+import app.forgetit.ui.categoryIcon
+import app.forgetit.ui.loanIcon
 import app.forgetit.ui.pressScale
 import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.background
@@ -108,9 +113,10 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
                     items(used) { c -> FilterChip(category == c, { category = if (category == c) null else c }, { Text(c) }) }
                 }
             }
-            if (shown.isEmpty()) item {
+            if (subs.isEmpty()) item { EmptyState(AppIcons.Subscriptions, "Nothing to forget yet", "Tap + and add your first subscription. Forget-it keeps the renewal date for you.") }
+            else if (shown.isEmpty()) item {
                 Text(
-                    if (subs.isEmpty()) "No subscriptions yet. Tap + to add your first one." else "No matches.",
+                    if (subs.isEmpty()) "Nothing here yet" else "No matches.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -119,7 +125,7 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
                     if (v == SwipeToDismissBoxValue.EndToStart) { delete(s); true } else false
                 })
                 SwipeToDismissBox(
-                    state = state, modifier = Modifier.animateItem(), enableDismissFromStartToEnd = false,
+                    state = state, modifier = Modifier.animateItem().enterStagger(shown.indexOf(s), s.id), enableDismissFromStartToEnd = false,
                     backgroundContent = {
                         Box(Modifier.fillMaxSize().then(if (state.dismissDirection == SwipeToDismissBoxValue.EndToStart) Modifier.clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.errorContainer) else Modifier).padding(16.dp), contentAlignment = Alignment.CenterEnd) {
                             Icon(AppIcons.Delete, contentDescription = "Delete")
@@ -136,7 +142,7 @@ private fun SubscriptionRow(s: Subscription, today: LocalDate, cover: java.io.Fi
     val next = Renewal.next(s, today)
     OutlinedCard(Modifier.fillMaxWidth().pressScale(onClick)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(s.name, cover)
+            Avatar(s.name, cover, icon = categoryIcon(s.category), tint = categoryColor(s.category))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(s.name, style = MaterialTheme.typography.titleMedium)

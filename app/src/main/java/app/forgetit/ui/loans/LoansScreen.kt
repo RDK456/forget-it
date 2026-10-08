@@ -1,5 +1,12 @@
 package app.forgetit.ui.loans
 
+import app.forgetit.ui.enterStagger
+import app.forgetit.ui.EmptyState
+import app.forgetit.ui.AnimatedProgress
+import app.forgetit.ui.AnimatedMoney
+import app.forgetit.ui.categoryColor
+import app.forgetit.ui.categoryIcon
+import app.forgetit.ui.loanIcon
 import app.forgetit.ui.pressScale
 import app.forgetit.ui.AppIcons
 import androidx.compose.foundation.clickable
@@ -56,31 +63,31 @@ fun LoansScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
                 OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         Text("EMIs per month", style = MaterialTheme.typography.labelLarge)
-                        Text(Money.format(outgo.monthlyMinor, settings.defaultCurrency), style = MaterialTheme.typography.headlineMedium)
+                        AnimatedMoney(outgo.monthlyMinor, settings.defaultCurrency, MaterialTheme.typography.headlineMedium)
                         if (outgo.excluded > 0) Text("${outgo.excluded} excluded - set exchange rates in Settings", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
-            if (loans.isEmpty()) item { Text("No loans yet. Tap + to add a loan or EMI.") }
+            if (loans.isEmpty()) item { EmptyState(AppIcons.Loans, "No loans yet", "Add a loan or EMI and Forget-it will count down every installment for you.") }
             items(loans, key = { it.id }) { l ->
                 val s = Amortization.build(l, adj.filter { it.loanId == l.id }, pay.filter { it.loanId == l.id }, today)
                 val paidCount = s.rows.count { it.status == RowStatus.PAID }
-                OutlinedCard(Modifier.animateItem().fillMaxWidth().pressScale { onOpen(l.id) }) {
+                OutlinedCard(Modifier.animateItem().fillMaxWidth().enterStagger(loans.indexOf(l), l.id).pressScale { onOpen(l.id) }) {
                     Column(Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Avatar(l.name, covers["LOAN:${l.id}"])
+                            Avatar(l.name, covers["LOAN:${l.id}"], icon = loanIcon(l.type), tint = androidx.compose.ui.graphics.Color(0xFF5560E0))
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(l.name, style = MaterialTheme.typography.titleMedium)
                                 Text(listOf(l.type.name.lowercase().replaceFirstChar { it.uppercase() }, l.lender).filter { it.isNotBlank() }.joinToString(" - "), style = MaterialTheme.typography.bodySmall)
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(Money.format(s.outstandingMinor, l.currency), style = MaterialTheme.typography.titleMedium)
+                                AnimatedMoney(s.outstandingMinor, l.currency, MaterialTheme.typography.titleMedium)
                                 Text("outstanding", style = MaterialTheme.typography.bodySmall)
                             }
                         }
-                        LinearProgressIndicator(
-                            progress = { if (s.rows.isEmpty()) 1f else paidCount / s.rows.size.toFloat() },
+                        AnimatedProgress(
+                            target = if (s.rows.isEmpty()) 1f else paidCount / s.rows.size.toFloat(),
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         )
                         val next = s.nextDue

@@ -35,6 +35,9 @@ class AppContainer(val context: Context) {
     val clock: Clock = Clock.systemDefaultZone()
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    /** Incremented to fire the app-wide confetti overlay. */
+    val confetti = kotlinx.coroutines.flow.MutableStateFlow(0)
+
     val db: AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "forgetit.db").addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
     val settings = SettingsStore(context)
     val photos = PhotoRepository(db.photoDao(), File(context.filesDir, "photos").also { it.mkdirs() })

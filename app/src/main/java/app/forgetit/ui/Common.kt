@@ -94,7 +94,7 @@ fun TotalsCard(label: String, totals: Totals, currency: String, modifier: Modifi
     OutlinedCard(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp)) {
             Text(label, style = MaterialTheme.typography.labelLarge)
-            Text(Money.format(totals.monthlyMinor, currency), style = MaterialTheme.typography.headlineMedium)
+            AnimatedMoney(totals.monthlyMinor, currency, MaterialTheme.typography.headlineMedium)
             Row { Text("${Money.format(totals.yearlyMinor, currency)} per year", style = MaterialTheme.typography.bodyMedium) }
             if (totals.excluded > 0) {
                 Text(

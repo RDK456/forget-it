@@ -1,6 +1,7 @@
 package app.forgetit.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -23,44 +24,58 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import app.forgetit.ForgetItApp
 import app.forgetit.MainActivity
+import app.forgetit.domain.Amortization
 import app.forgetit.domain.Money
 import app.forgetit.domain.Renewal
 import app.forgetit.domain.computeTotals
+import app.forgetit.domain.loanMonthlyOutgo
 import app.forgetit.ui.relativeDay
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
-/** Home-screen widget: monthly outgo and the next three charges. Amounts are hidden while the app lock is on. */
+private data class Row3(val name: String, val date: LocalDate, val amount: String)
+
+/** Home-screen widget: monthly outgo (subscriptions plus EMIs) and the next three charges. Amounts hide while the app lock is on. */
 class ForgetItWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val c = (context.applicationContext as ForgetItApp).container
         val today = LocalDate.now(c.clock)
         val settings = c.settings.flow.first()
+        val rates = settings.rates.mapValues { it.value.value }
         val subs = c.subscriptions.getAll()
-        val totals = computeTotals(subs, today, settings.defaultCurrency, settings.rates.mapValues { it.value.value })
+        val loans = c.loans.getLoans()
+        val adj = c.loans.getAdjustments()
+        val pay = c.loans.getPayments()
+        val subTotals = computeTotals(subs, today, settings.defaultCurrency, rates)
+        val emi = loanMonthlyOutgo(loans, adj, pay, today, settings.defaultCurrency, rates)
+        val monthly = subTotals.monthlyMinor + emi.monthlyMinor
         val hide = settings.biometricLock
-        val rows = subs.filter { it.active }.map { it to Renewal.next(it, today) }.sortedBy { it.second }.take(3)
+
+        val subRows = subs.filter { it.active }.map { Row3(it.name, Renewal.next(it, today), Money.format(it.amountMinor, it.currency)) }
+        val emiRows = loans.filter { it.active }.mapNotNull { l ->
+            val row = Amortization.build(l, adj.filter { it.loanId == l.id }, pay.filter { it.loanId == l.id }, today).nextDue ?: return@mapNotNull null
+            Row3("${l.name} EMI", row.dueDate, Money.format(row.paymentMinor, l.currency))
+        }
+        val rows = (subRows + emiRows).sortedBy { it.date }.take(3)
+        val open = actionStartActivity(Intent(context, MainActivity::class.java))
 
         provideContent {
             GlanceTheme {
-                Column(
-                    GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(12.dp)
-                        .clickable(actionStartActivity(android.content.Intent(context, MainActivity::class.java))),
-                ) {
-                    Text("Monthly outgo", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp))
+                Column(GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(12.dp).clickable(open)) {
+                    Text("Going out this month", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp))
                     Text(
-                        if (hide) "Locked" else Money.format(totals.monthlyMinor, settings.defaultCurrency),
+                        if (hide) "Locked" else Money.format(monthly, settings.defaultCurrency),
                         style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold),
                     )
                     Spacer(GlanceModifier.height(6.dp))
-                    if (rows.isEmpty()) {
-                        Text("Nothing scheduled", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp))
-                    }
-                    rows.forEach { (s, next) ->
+                    if (rows.isEmpty()) Text("Nothing scheduled", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp))
+                    rows.forEach { r ->
                         Row(GlanceModifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                            Text(s.name, GlanceModifier.defaultWeight(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp), maxLines = 1)
-                            val right = relativeDay(next, today) + if (hide) "" else "  " + Money.format(s.amountMinor, s.currency)
-                            Text(right, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1)
+                            Text(r.name, GlanceModifier.defaultWeight(), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp), maxLines = 1)
+                            Text(
+                                relativeDay(r.date, today) + if (hide) "" else "  " + r.amount,
+                                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1,
+                            )
                         }
                     }
                 }

@@ -4,12 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -17,20 +19,24 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import java.io.File
 
-/** Cover photo when there is one, else a colored circle with the initial. */
+/** The cover photo if there is one, else a tinted circle with the category icon, else the initial on a brand colour. */
 @Composable
-fun Avatar(name: String, photo: File?, modifier: Modifier = Modifier, size: Dp = 44.dp) {
+fun Avatar(
+    name: String, photo: File?, modifier: Modifier = Modifier, size: Dp = 44.dp,
+    icon: ImageVector? = null, tint: Color? = null,
+) {
     if (photo != null) {
         AsyncImage(
             model = photo, contentDescription = "Photo of $name", contentScale = ContentScale.Crop,
             modifier = modifier.size(size).clip(CircleShape),
         )
+    } else if (icon != null && tint != null) {
+        Box(modifier.size(size).clip(CircleShape).background(tint.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.5f))
+        }
     } else {
-        val tint = AVATAR_COLORS[name.lowercase().hashCode().mod(AVATAR_COLORS.size)]
-        Box(
-            modifier.size(size).clip(CircleShape).background(tint),
-            contentAlignment = Alignment.Center,
-        ) {
+        val tintColor = AVATAR_COLORS[name.lowercase().hashCode().mod(AVATAR_COLORS.size)]
+        Box(modifier.size(size).clip(CircleShape).background(tintColor), contentAlignment = Alignment.Center) {
             Text(name.trim().firstOrNull()?.uppercase() ?: "?", color = Color.White, fontWeight = FontWeight.Bold)
         }
     }

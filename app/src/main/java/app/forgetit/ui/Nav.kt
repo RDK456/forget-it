@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -92,7 +93,7 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(t.icon, contentDescription = null) },
+                            icon = { val sc = bounceScale(route == t.route); Icon(t.icon, contentDescription = null, modifier = Modifier.graphicsLayer { scaleX = sc; scaleY = sc }) },
                             label = { Text(t.label) },
                         )
                     }

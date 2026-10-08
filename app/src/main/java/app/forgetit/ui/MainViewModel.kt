@@ -1,6 +1,7 @@
 package app.forgetit.ui
 
 import androidx.lifecycle.ViewModel
+import app.forgetit.domain.import
 import androidx.lifecycle.viewModelScope
 import app.forgetit.AppContainer
 import app.forgetit.data.Settings
@@ -69,7 +70,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
     fun deleteLoan(id: Long) = viewModelScope.launch { c.loans.delete(id) }
 
     fun markPaid(loanId: Long, no: Int, amountMinor: Long) =
-        viewModelScope.launch { c.loans.markPaid(loanId, no, java.time.LocalDate.now(c.clock), amountMinor) }
+        viewModelScope.launch { c.loans.markPaid(loanId, no, java.time.LocalDate.now(c.clock), amountMinor); c.confetti.value++ }
 
     fun unmarkPaid(loanId: Long, no: Int) = viewModelScope.launch { c.loans.unmarkPaid(loanId, no) }
 
@@ -118,10 +119,57 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
 
     fun markEmiFrom(m: app.forgetit.domain.EmiMatch, t: app.forgetit.domain.Txn) = viewModelScope.launch {
         c.loans.markPaid(m.loanId, m.installmentNo, t.date, t.amountMinor)
+        c.confetti.value++
     }
 
     fun addManualTxn(p: app.forgetit.domain.ParsedTxn, source: String, text: String, onDone: () -> Unit) = viewModelScope.launch {
         c.txns.addIfNew(p, source, text)
         onDone()
+    }
+
+    private fun summary(imported: Int, errors: List<String>): String {
+        val more = if (errors.size > 5) "\n..." else ""
+        return "$imported imported, ${errors.size} skipped" + (if (errors.isNotEmpty()) ":\n" + errors.take(5).joinToString("\n") + more else "")
+    }
+
+    private fun exportWith(uri: android.net.Uri, label: String, onDone: (String) -> Unit, produce: suspend () -> String) = viewModelScope.launch {
+        val msg = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val text = produce()
+                c.context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+                "Exported $label"
+            }.getOrElse { "Export failed: ${it.message}" }
+        }
+        onDone(msg)
+    }
+
+    private fun importWith(uri: android.net.Uri, onDone: (String) -> Unit, handle: suspend (String) -> String) = viewModelScope.launch {
+        val msg = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val bytes = c.context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                if (bytes.size > maxCsvBytes) "That file is too large to import" else handle(bytes.toString(Charsets.UTF_8))
+            }.getOrElse { "Import failed: ${it.message}" }
+        }
+        onDone(msg)
+    }
+
+    fun exportLoans(uri: android.net.Uri, onDone: (String) -> Unit) = exportWith(uri, "loans", onDone) {
+        app.forgetit.domain.LoanCsv.export(c.loans.getLoans(), c.loans.getPayments(), c.loans.getAdjustments())
+    }
+
+    fun importLoans(uri: android.net.Uri, onDone: (String) -> Unit) = importWith(uri, onDone) { text ->
+        val r = app.forgetit.domain.LoanCsv.import(text)
+        r.items.forEach { c.loans.importBundle(it) }
+        summary(r.items.size, r.errors)
+    }
+
+    fun exportStock(uri: android.net.Uri, onDone: (String) -> Unit) = exportWith(uri, "stock", onDone) {
+        app.forgetit.domain.StockCsv.export(c.stock.getItems(), c.stock.getBatches(), c.stock.getLogs())
+    }
+
+    fun importStock(uri: android.net.Uri, onDone: (String) -> Unit) = importWith(uri, onDone) { text ->
+        val r = app.forgetit.domain.StockCsv.import(text)
+        r.items.forEach { c.stock.importBundle(it) }
+        summary(r.items.size, r.errors)
     }
 }

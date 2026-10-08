@@ -5,14 +5,19 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.forgetit.data.ThemeMode
+import app.forgetit.ui.ConfettiBurst
 import app.forgetit.ui.ForgetItRoot
+import app.forgetit.ui.SplashOverlay
 import app.forgetit.ui.lock.BiometricGate
 import app.forgetit.ui.theme.ForgetItTheme
 
@@ -37,6 +42,8 @@ class MainActivity : FragmentActivity() {
         val container = (application as ForgetItApp).container
         setContent {
             val settings by container.settings.flow.collectAsStateWithLifecycle(initialValue = null)
+            val confetti by container.confetti.collectAsStateWithLifecycle()
+            var splash by rememberSaveable { mutableStateOf(true) }
             val s = settings ?: return@setContent
             val dark = when (s.theme) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
@@ -49,8 +56,12 @@ class MainActivity : FragmentActivity() {
             }
             ForgetItTheme(dark) {
                 Surface {
-                    BiometricGate(this@MainActivity, s.biometricLock) {
-                        ForgetItRoot(container, sharedText.value) { sharedText.value = null }
+                    Box {
+                        BiometricGate(this@MainActivity, s.biometricLock) {
+                            ForgetItRoot(container, sharedText.value) { sharedText.value = null }
+                        }
+                        ConfettiBurst(confetti)
+                        if (splash) SplashOverlay { splash = false }
                     }
                 }
             }

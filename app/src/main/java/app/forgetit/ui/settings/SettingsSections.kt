@@ -92,19 +92,29 @@ fun HealthSection(health: Health, onTest: () -> Unit) {
 }
 
 @Composable
+private fun CsvRow(
+    label: String, fileName: String, onMessage: (String) -> Unit,
+    export: (android.net.Uri, (String) -> Unit) -> Unit, import: (android.net.Uri, (String) -> Unit) -> Unit,
+) {
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if (uri != null) export(uri, onMessage) }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) import(uri, onMessage) }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+        OutlinedButton({ exportLauncher.launch(fileName) }) { Text("Export") }
+        OutlinedButton({ importLauncher.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel")) }) { Text("Import") }
+    }
+}
+
+@Composable
 fun BackupSection(vm: MainViewModel) {
     var message by remember { mutableStateOf<String?>(null) }
-    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
-        if (uri != null) vm.exportSubscriptions(uri) { message = it }
-    }
-    val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.importSubscriptions(uri) { message = it }
-    }
     SectionTitle("Backup (CSV)")
-    Text("Export or import subscriptions as a spreadsheet file. Photos are not included, so keep them in your gallery too.", style = MaterialTheme.typography.bodySmall)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton({ export.launch("forgetit-subscriptions.csv") }) { Text("Export") }
-        OutlinedButton({ import.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel")) }) { Text("Import") }
-    }
+    Text(
+        "Export each tracker as a spreadsheet file and import it again later. Photos are not included, so keep them in your gallery too.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    CsvRow("Subscriptions", "forgetit-subscriptions.csv", { message = it }, vm::exportSubscriptions, vm::importSubscriptions)
+    CsvRow("Loans and EMIs", "forgetit-loans.csv", { message = it }, vm::exportLoans, vm::importLoans)
+    CsvRow("Household stock", "forgetit-stock.csv", { message = it }, vm::exportStock, vm::importStock)
     message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 }

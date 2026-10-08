@@ -1,5 +1,7 @@
 package app.forgetit.ui.insights
 
+import app.forgetit.ui.AppIcons
+import app.forgetit.ui.EmptyState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -67,7 +69,8 @@ fun InsightsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) {
                     }
                 }
             }
-            if (ins.slices.isEmpty()) item { Text("Add subscriptions to see where the money goes.") }
+            item { SavingsSpotlight(ins.top, cur) }
+            if (ins.slices.isEmpty()) item { EmptyState(AppIcons.Insights, "Nothing to chart yet", "Add a subscription or a loan and the colours will show up here.") }
             else {
                 item { Text("By category", style = MaterialTheme.typography.titleMedium) }
                 item { Donut(ins.slices.map { it.monthlyMinor.toFloat() }, ins.slices.mapIndexed { i, s -> sliceColor(s.label, i) }) }

@@ -24,4 +24,4 @@ export JAVA_HOME=<your jdk 17>
 
 - Reading SMS: grant the permission in Transactions. For an app installed outside Play, Android may require App info, three-dot menu, Allow restricted settings.
 - Emails: open the email in Gmail, Share, choose Forget-it.
-- Backups: CSV for subscriptions only so far; photos are not included.
+- Backups: CSV export and import for subscriptions, loans and stock; photos are not included.

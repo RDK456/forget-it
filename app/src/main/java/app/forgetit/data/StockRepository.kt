@@ -65,4 +65,11 @@ class StockRepository(private val dao: StockDao, private val photos: PhotoReposi
         dao.insertLog(StockLog(itemId = b.itemId, date = today, deltaMilli = -b.quantityMilli, kind = LogKind.DISCARD).toEntity())
         rebase(b.itemId, today)
     }
+
+    /** Adds an imported item with its batches and history as a new item. */
+    suspend fun importBundle(b: app.forgetit.domain.StockBundle) {
+        val id = dao.upsertItem(b.item.copy(id = 0).toEntity())
+        b.batches.forEach { dao.insertBatch(it.copy(itemId = id).toEntity()) }
+        b.logs.forEach { dao.insertLog(it.copy(itemId = id).toEntity()) }
+    }
 }
