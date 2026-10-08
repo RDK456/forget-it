@@ -25,6 +25,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.setValue
@@ -120,7 +124,7 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
             popEnterTransition = { fadeIn(tween(220)) },
             popExitTransition = { fadeOut(tween(140)) + slideOutHorizontally(tween(220)) { it / 14 } },
         ) {
-            composable("overview") { OverviewScreen(vm, today) }
+            composable("overview") { OverviewScreen(vm, today) { r -> if (r == "scan") vm.openScan() else nav.navigate(r) } }
             composable("subs") {
                 SubscriptionsScreen(vm, today, onAdd = { nav.navigate("edit/0") }, onOpen = { nav.navigate("edit/$it") })
             }
@@ -155,17 +159,27 @@ fun ComingSoon(title: String, onBack: (() -> Unit)? = null) {
 private fun MoreScreen(nav: NavController) {
     ScreenScaffold("More", onBack = null) { pad ->
         androidx.compose.foundation.layout.Column(Modifier.padding(pad)) {
+            val b = app.forgetit.ui.theme.Brushes
             listOf(
-                Triple("calendar", "Calendar", AppIcons.Calendar),
-                Triple("insights", "Insights", AppIcons.Insights),
-                Triple("bills", "Bills and utilities", AppIcons.Bills),
-                Triple("transactions", "Transactions", AppIcons.Transactions),
-                Triple("settings", "Settings", AppIcons.Settings),
-            ).forEach { (r, label, icon) ->
+                Triple("calendar", "Calendar" to "Every charge on one month grid", AppIcons.Calendar) to b.bill,
+                Triple("insights", "Insights" to "Where the money goes", AppIcons.Insights) to b.scan,
+                Triple("bills", "Bills and utilities" to "Electricity, water, rent and more", AppIcons.Bills) to b.loan,
+                Triple("transactions", "Transactions" to "Payments found in SMS, email and photos", AppIcons.Transactions) to b.subscription,
+                Triple("settings", "Settings" to "Scanning, reminders, backup, lock", AppIcons.Settings) to b.berry,
+            ).forEach { (item, brush) ->
+                val (r, text, icon) = item
                 ListItem(
-                    headlineContent = { Text(label) },
-                    leadingContent = { Icon(icon, contentDescription = null) },
-                    modifier = Modifier.clickable { nav.navigate(r) },
+                    headlineContent = { Text(text.first) },
+                    supportingContent = { Text(text.second) },
+                    leadingContent = {
+                        androidx.compose.foundation.layout.Box(
+                            Modifier.size(44.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(15.dp))
+                                .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(brush.from, brush.to))),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(icon, contentDescription = null, tint = brush.on) }
+                    },
+                    trailingContent = { Icon(AppIcons.Next, contentDescription = null) },
+                    modifier = Modifier.pressScale { nav.navigate(r) },
                 )
             }
         }

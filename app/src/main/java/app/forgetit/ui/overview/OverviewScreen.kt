@@ -71,7 +71,7 @@ const val UPCOMING_DAYS = 14L
 private val LOAN_TINT = Color(0xFF5560E0)
 
 @Composable
-fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
+fun OverviewScreen(vm: MainViewModel, today: LocalDate, onQuick: (String) -> Unit = {}) {
     val subs by vm.subs.collectAsStateWithLifecycle()
     val loans by vm.loans.collectAsStateWithLifecycle()
     val pay by vm.loanPayments.collectAsStateWithLifecycle()
@@ -154,8 +154,9 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
 
     Box(Modifier.fillMaxSize()) {
         ScreenScaffold("Overview", onBack = null) { pad ->
-            ListScreen(pad) {
+            ListScreen(pad, onRefresh = { vm.refreshAll() }) {
                 item { RemyHeader(mood, greeting, message) }
+                item { app.forgetit.ui.QuickActions(onQuick) }
                 item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, billOut.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
                 if (settings.budgetMinor > 0) item { BudgetBar(monthlyAll, settings.budgetMinor, cur) }
                 item { Text("Coming up in $UPCOMING_DAYS days", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }

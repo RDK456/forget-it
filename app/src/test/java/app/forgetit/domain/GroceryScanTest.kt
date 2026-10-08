@@ -61,4 +61,13 @@ class GroceryScanTest {
         assertEquals(full, GroceryScan.combine(full, labels))
         assertEquals(listOf("Apple"), GroceryScan.combine(emptyList(), labels).map { it.name })
     }
+
+    @Test fun spokenItems() {
+        GroceryScan.fromSpeech("2 litres milk")!!.let { assertEquals("Milk", it.name); assertEquals(2000L, it.quantityMilli); assertEquals("L", it.unit); assertEquals("Dairy", it.category) }
+        GroceryScan.fromSpeech("half kg sugar")!!.let { assertEquals("Sugar", it.name); assertEquals(500L, it.quantityMilli); assertEquals("kg", it.unit) }
+        GroceryScan.fromSpeech("three bananas")!!.let { assertEquals("Bananas", it.name); assertEquals(3000L, it.quantityMilli); assertEquals("pcs", it.unit) }
+        GroceryScan.fromSpeech("a dozen eggs")!!.let { assertEquals("Eggs", it.name); assertEquals(12000L, it.quantityMilli) }
+        GroceryScan.fromSpeech("rice")!!.let { assertEquals(1000L, it.quantityMilli); assertEquals("kg", it.unit) }
+        assertNull(GroceryScan.fromSpeech("   "))
+    }
 }

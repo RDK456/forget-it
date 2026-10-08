@@ -45,3 +45,15 @@ data class DomainColors(val subscription: Color, val loan: Color, val stock: Col
 
 val LightDomain = DomainColors(Color(0xFF0B8F88), Color(0xFF5560E0), Color(0xFFD98E04), Color(0xFF2E86C1))
 val DarkDomain = DomainColors(Color(0xFF4FD1C5), Color(0xFF9AA3FF), Color(0xFFF2BE5B), Color(0xFF6FB6E8))
+
+/** Two-stop gradient plus the colour that reads on top of it. One per tracker, reused by headers and quick actions. */
+data class TrackerBrush(val from: Color, val to: Color, val on: Color = Color.White)
+
+object Brushes {
+    val scan = TrackerBrush(Color(0xFF0B8F88), Color(0xFF5560E0))
+    val subscription = TrackerBrush(Color(0xFF0B6E6A), Color(0xFF2DBFAE))
+    val loan = TrackerBrush(Color(0xFF4450D6), Color(0xFF8A6CF0))
+    val bill = TrackerBrush(Color(0xFF1F78B4), Color(0xFF4FC3E8))
+    val stock = TrackerBrush(Color(0xFFE08A00), Color(0xFFFFC04D), Color(0xFF2B1A00))
+    val berry = TrackerBrush(Color(0xFFB3254F), Color(0xFFE8648A))
+}

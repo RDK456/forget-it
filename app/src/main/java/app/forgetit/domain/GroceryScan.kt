@@ -124,4 +124,35 @@ object GroceryScan {
         if (receipt.size >= 2) return receipt
         return (receipt + labels).distinctBy { it.name.lowercase(Locale.ROOT) }
     }
+
+    private val NUMBER_WORDS = mapOf(
+        "a" to 1.0, "an" to 1.0, "one" to 1.0, "two" to 2.0, "three" to 3.0, "four" to 4.0, "five" to 5.0, "six" to 6.0, "seven" to 7.0,
+        "eight" to 8.0, "nine" to 9.0, "ten" to 10.0, "half" to 0.5,
+    )
+    private val SPOKEN = Regex(
+        """^(?:(\d+(?:[.,]\d+)?|a|an|one|two|three|four|five|six|seven|eight|nine|ten|half)\s+)?""" +
+            """(?:(kilograms?|kilos?|kgs?|grams?|gms?|g|litres?|liters?|ltr|l|millilitres?|ml|dozen|packets?|packs?|pieces?|pcs|bottles?|cans?)\s+)?(?:of\s+)?(.+)$""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** What a person says into the microphone, such as "2 litres milk" or "half kg sugar", as one stock item. */
+    fun fromSpeech(said: String): ScannedItem? {
+        val m = SPOKEN.find(said.trim().lowercase(Locale.ROOT)) ?: return null
+        val name = titleCase(m.groupValues[3].trim().trim('.', ','))
+        if (name.count { it.isLetter() } < 2) return null
+        val numText = m.groupValues[1]
+        val value = numText.toDoubleOrNull() ?: numText.replace(',', '.').toDoubleOrNull() ?: NUMBER_WORDS[numText] ?: 1.0
+        val unitWord = m.groupValues[2]
+        val unit = when {
+            unitWord.startsWith("kilo") || unitWord.startsWith("kg") -> "kg"
+            unitWord.startsWith("gram") || unitWord.startsWith("gm") || unitWord == "g" -> "g"
+            unitWord.startsWith("lit") || unitWord == "ltr" || unitWord == "l" -> "l"
+            unitWord.startsWith("milli") || unitWord == "ml" -> "ml"
+            unitWord == "dozen" -> "dozen"
+            else -> ""
+        }
+        if (value <= 0) return null
+        val (qty, u) = if (unit.isNotEmpty()) sizeToQuantity(value, unit) else Math.round(value * 1000) to defaultUnit(name).let { d -> if (numText.isEmpty()) d else if (d == "pcs") d else d }
+        return ScannedItem(name.take(60), qty, u, categoryOf(name))
+    }
 }

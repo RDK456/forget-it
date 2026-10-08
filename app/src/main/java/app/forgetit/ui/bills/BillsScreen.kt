@@ -53,15 +53,12 @@ fun BillsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
         topBar = { TopAppBar(title = { Text("Bills and utilities") }, navigationIcon = { androidx.compose.material3.IconButton(onBack) { Icon(AppIcons.Back, "Back") } }) },
         floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add bill") } },
     ) { pad ->
-        ListScreen(pad) {
+        ListScreen(pad, onRefresh = { vm.refreshAll() }) {
             item {
-                OutlinedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Bills per month (average)", style = MaterialTheme.typography.labelLarge)
-                        AnimatedMoney(outgo.monthlyMinor, settings.defaultCurrency, MaterialTheme.typography.headlineMedium)
-                        if (outgo.excluded > 0) Text("${outgo.excluded} excluded - set exchange rates in Settings", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
+                app.forgetit.ui.GradientHeader(
+                    AppIcons.Bills, "Bills per month (average)", app.forgetit.ui.theme.Brushes.bill, valueMinor = outgo.monthlyMinor, currency = settings.defaultCurrency,
+                    warning = if (outgo.excluded > 0) "${outgo.excluded} excluded - set exchange rates in Settings" else null,
+                )
             }
             if (bills.isEmpty()) item { EmptyState(AppIcons.Bills, "No bills yet", "Add electricity, water, broadband or rent. Record each bill and Forget-it learns what is normal.") }
             items(bills.sortedBy { it.name.lowercase() }, key = { it.id }) { b ->

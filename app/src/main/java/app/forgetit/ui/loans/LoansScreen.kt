@@ -58,15 +58,12 @@ fun LoansScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
         topBar = { TopAppBar(title = { Text("Loans and EMIs") }) },
         floatingActionButton = { FloatingActionButton(onClick = onAdd) { Icon(AppIcons.Add, "Add loan") } },
     ) { pad ->
-        ListScreen(pad) {
+        ListScreen(pad, onRefresh = { vm.refreshAll() }) {
             item {
-                OutlinedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("EMIs per month", style = MaterialTheme.typography.labelLarge)
-                        AnimatedMoney(outgo.monthlyMinor, settings.defaultCurrency, MaterialTheme.typography.headlineMedium)
-                        if (outgo.excluded > 0) Text("${outgo.excluded} excluded - set exchange rates in Settings", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
+                app.forgetit.ui.GradientHeader(
+                    AppIcons.Loans, "EMIs per month", app.forgetit.ui.theme.Brushes.loan, valueMinor = outgo.monthlyMinor, currency = settings.defaultCurrency,
+                    warning = if (outgo.excluded > 0) "${outgo.excluded} excluded - set exchange rates in Settings" else null,
+                )
             }
             if (loans.isEmpty()) item { EmptyState(AppIcons.Loans, "No loans yet", "Add a loan or EMI and Forget-it will count down every installment for you.") }
             items(loans, key = { it.id }) { l ->

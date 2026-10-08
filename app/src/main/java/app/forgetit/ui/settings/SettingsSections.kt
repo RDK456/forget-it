@@ -117,5 +117,29 @@ fun BackupSection(vm: MainViewModel) {
     CsvRow("Loans and EMIs", "forgetit-loans.csv", { message = it }, vm::exportLoans, vm::importLoans)
     CsvRow("Household stock", "forgetit-stock.csv", { message = it }, vm::exportStock, vm::importStock)
     CsvRow("Bills and utilities", "forgetit-bills.csv", { message = it }, vm::exportBills, vm::importBills)
+    FullBackupRow(vm) { message = it }
     message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+}
+
+@Composable
+private fun FullBackupRow(vm: MainViewModel, onMessage: (String) -> Unit) {
+    val export = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null) vm.exportFull(uri, onMessage)
+    }
+    val import = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importFull(uri, onMessage)
+    }
+    var confirm by remember { mutableStateOf(false) }
+    androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+        Text("Full backup (everything, with photos)", style = MaterialTheme.typography.titleSmall)
+        Text("One zip with all trackers and photos. Restoring replaces everything on this phone and restarts the app.", style = MaterialTheme.typography.bodySmall)
+        androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.Button({ export.launch("forgetit-backup.zip") }) { Text("Save backup") }
+            androidx.compose.material3.OutlinedButton({ confirm = true }) { Text("Restore") }
+        }
+    }
+    if (confirm) app.forgetit.ui.loans.ConfirmDialog(
+        "Restore from a backup?", "Everything on this phone is replaced by the backup, including photos.", "Choose file",
+        { confirm = false; import.launch(arrayOf("application/zip", "application/octet-stream")) }, { confirm = false },
+    )
 }

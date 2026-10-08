@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
@@ -17,6 +18,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.fillMaxSize
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.CardDefaults
@@ -79,31 +83,46 @@ fun ScreenScaffold(title: String, onBack: (() -> Unit)?, content: @Composable (P
     )
 }
 
-@Composable
-fun ListScreen(pad: PaddingValues, content: LazyListScope.() -> Unit) {
-    LazyColumn(
-        Modifier.padding(pad),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        content = content,
-    )
+/** The standard scrolling list. With [onRefresh] a pull down on the list runs it and shows the spinner for at least a moment. */
+@androidx.compose.runtime.Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+fun ListScreen(
+    pad: PaddingValues,
+    onRefresh: (suspend () -> Unit)? = null,
+    state: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    content: LazyListScope.() -> Unit,
+) {
+    if (onRefresh == null) {
+        LazyColumn(Modifier.padding(pad), state, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        return
+    }
+    var refreshing by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = {
+            scope.launch {
+                refreshing = true
+                val started = System.currentTimeMillis()
+                try { onRefresh() } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e }
+                val left = 700 - (System.currentTimeMillis() - started)
+                if (left > 0) kotlinx.coroutines.delay(left)
+                refreshing = false
+            }
+        },
+        modifier = Modifier.padding(pad),
+    ) {
+        LazyColumn(Modifier.fillMaxSize(), state, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+    }
 }
 
 @Composable
 fun TotalsCard(label: String, totals: Totals, currency: String, modifier: Modifier = Modifier) {
-    OutlinedCard(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-        Column(Modifier.padding(16.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            AnimatedMoney(totals.monthlyMinor, currency, MaterialTheme.typography.headlineMedium)
-            Row { Text("${Money.format(totals.yearlyMinor, currency)} per year", style = MaterialTheme.typography.bodyMedium) }
-            if (totals.excluded > 0) {
-                Text(
-                    "${totals.excluded} excluded - set exchange rates in Settings",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
-    }
+    GradientHeader(
+        AppIcons.Subscriptions, label, app.forgetit.ui.theme.Brushes.subscription, modifier, valueMinor = totals.monthlyMinor, currency = currency,
+        supporting = "${Money.format(totals.yearlyMinor, currency)} per year",
+        warning = if (totals.excluded > 0) "${totals.excluded} excluded - set exchange rates in Settings" else null,
+    )
 }
 
 /** Cards that dip slightly under the finger, so a tap feels acknowledged before the screen changes. */

@@ -98,7 +98,7 @@ fun SubscriptionsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, 
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { pad ->
-        ListScreen(pad) {
+        ListScreen(pad, onRefresh = { vm.refreshAll() }) {
             item { TotalsCard("Subscriptions per month", totals, settings.defaultCurrency) }
             item {
                 OutlinedTextField(

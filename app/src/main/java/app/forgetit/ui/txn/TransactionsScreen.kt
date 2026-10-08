@@ -47,6 +47,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
     var message by remember { mutableStateOf<String?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
 
+    var visible by remember { mutableStateOf(40) }
     val live = txns.filter { it.status != "IGNORED" }
     val month = YearMonth.from(today)
     val thisMonth = live.filter { YearMonth.from(it.date) == month }
@@ -55,7 +56,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
     val emi = TxnMatching.emiMatches(live, loans, adj, pay, today)
 
     ScreenScaffold("Transactions", onBack) { pad ->
-        ListScreen(pad) {
+        ListScreen(pad, onRefresh = { vm.refreshAll(forceScan = true) }) {
             item { AutoScanSection(vm, settings) { message = it } }
             message?.let { m -> item { Text(m, style = MaterialTheme.typography.bodySmall) } }
             val spent = thisMonth.filter { it.direction == TxnDirection.DEBIT }.groupBy { it.currency }.mapValues { e -> e.value.sumOf { it.amountMinor } }
@@ -100,7 +101,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
             }
             item { Text("All transactions", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }
             if (txns.isEmpty()) item { Text("Nothing yet. Scan your messages or share a receipt.") }
-            items(txns, key = { "t${it.id}" }) { t ->
+            items(txns.take(visible), key = { "t${it.id}" }) { t ->
                 val ignored = t.status == "IGNORED"
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
@@ -117,6 +118,13 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
                         TextButton({ vm.setTxnStatus(t.id, if (ignored) "NEW" else "IGNORED") }) { Text(if (ignored) "Restore" else "Ignore") }
                         if (t.sender.isNotBlank() && t.sender !in settings.mutedSenders) TextButton({ vm.muteSender(t.sender) }) { Text("Mute sender") }
                     }
+                }
+            }
+            // Lazy loading: the next page is added only when the list is scrolled down to this row.
+            if (visible < txns.size) item(key = "more") {
+                androidx.compose.runtime.LaunchedEffect(visible) { visible += 40 }
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator(Modifier.padding(4.dp))
                 }
             }
             if (txns.isNotEmpty()) item { OutlinedButton({ confirmClear = true }, Modifier.fillMaxWidth()) { Text("Delete all transactions") } }

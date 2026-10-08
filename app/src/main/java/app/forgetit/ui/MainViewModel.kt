@@ -259,6 +259,35 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         }
         onDone(msgs.joinToString("\n").ifEmpty { "Nothing to add" })
     }
+    fun exportFull(uri: android.net.Uri, onDone: (String) -> Unit) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val msg = try {
+            val n = c.context.contentResolver.openOutputStream(uri)?.use { app.forgetit.data.FullBackup.write(c, it) } ?: error("no stream")
+            "Backup saved ($n files, with photos)"
+        } catch (e: Exception) { "Could not save the backup" }
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { onDone(msg) }
+    }
+
+    /** Replaces everything on this phone with the backup, then restarts the app. */
+    fun importFull(uri: android.net.Uri, onDone: (String) -> Unit) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        // restore() returns null on success, so opening the file is checked separately from its result.
+        val stream = c.context.contentResolver.openInputStream(uri)
+        val error = if (stream == null) "Could not open that file" else try {
+            stream.use { app.forgetit.data.FullBackup.restore(c, it) }
+        } catch (e: Exception) { "Could not restore from that file" }
+        if (error == null) app.forgetit.data.FullBackup.restart(c.context)
+        else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { onDone(error) }
+    }
+    /** What pull to refresh does everywhere: settle trials, catch up on messages and Gmail, mark matched EMIs, rebuild reminders. */
+    suspend fun refreshAll(forceScan: Boolean = false) {
+        c.subscriptions.settleTrials(java.time.LocalDate.now(c.clock))
+        val s = settings.value
+        if (s.autoScan || forceScan) {
+            app.forgetit.txn.AutoScan.scanDue(c, force = forceScan)
+            if (s.gmailEmail.isNotEmpty()) app.forgetit.gmail.GmailScanner.sync(c)
+        }
+        app.forgetit.txn.AutoScan.markMatchedEmis(c)
+        c.reminders.sync()
+    }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }
