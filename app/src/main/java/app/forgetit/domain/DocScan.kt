@@ -132,7 +132,7 @@ object DocScan {
     }
 
     private fun cycleOf(text: String): Cycle = when {
-        Regex("""annual|yearly|per year|/ ?yr|/ ?year""", IC).containsMatchIn(text) -> Cycle.YEARLY
+        Regex("""annual|yearly|per year|/ ?yr|/ ?year|\b(?:1|one) year\b|12[- ]months?|twelve months""", IC).containsMatchIn(text) -> Cycle.YEARLY
         Regex("""quarter""", IC).containsMatchIn(text) -> Cycle.QUARTERLY
         Regex("""weekly|per week|/ ?week""", IC).containsMatchIn(text) -> Cycle.WEEKLY
         else -> Cycle.MONTHLY

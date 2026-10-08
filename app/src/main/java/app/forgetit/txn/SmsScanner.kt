@@ -20,7 +20,7 @@ object SmsScanner {
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
 
     /** Reads the SMS inbox on this phone, keeps only payments. Returns the number of new transactions, or -1 without permission. */
-    suspend fun scanInbox(context: Context, repo: TxnRepository, since: LocalDate, defaultCurrency: String, zone: ZoneId, muted: Set<String> = emptySet()): Int =
+    suspend fun scanInbox(context: Context, repo: TxnRepository, since: LocalDate, defaultCurrency: String, zone: ZoneId, muted: Set<String> = emptySet(), onNew: suspend (String, LocalDate) -> Unit = { _, _ -> }): Int =
         withContext(Dispatchers.IO) {
             if (!hasPermission(context)) return@withContext -1
             val sinceMs = since.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -38,8 +38,9 @@ object SmsScanner {
                     val sender = c.getString(addrCol).orEmpty()
                     if (sender in muted) continue
                     val day = Instant.ofEpochMilli(c.getLong(dateCol)).atZone(zone).toLocalDate()
-                    val parsed = SmsParser.parse(body, day, defaultCurrency) ?: continue
-                    if (repo.addIfNew(parsed, "SMS", body, sender)) added++
+                    val parsed = SmsParser.parse(body, day, defaultCurrency)
+                    if (parsed != null && repo.addIfNew(parsed, "SMS", body, sender)) added++
+                    onNew(body, day)
                 }
             }
             added

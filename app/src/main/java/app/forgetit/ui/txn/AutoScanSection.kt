@@ -117,6 +117,20 @@ fun AutoScanSection(vm: MainViewModel, s: Settings, onMessage: (String) -> Unit)
             }
             GmailRow(vm, s, ctx, onMessage)
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Add subscriptions automatically", style = MaterialTheme.typography.bodyMedium)
+                    Text("When a charge repeats on a steady cycle. You get an Undo button.", style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(s.autoAddSubs, vm::setAutoAddSubs)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Create loans automatically", style = MaterialTheme.typography.bodyMedium)
+                    Text("From an EMI message with the amount and months, or the same EMI two months in a row.", style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(s.autoCreateLoans, vm::setAutoCreateLoans)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Mark an EMI paid when a matching payment is found", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                 Switch(s.autoMarkEmi, vm::setAutoMarkEmi)
             }

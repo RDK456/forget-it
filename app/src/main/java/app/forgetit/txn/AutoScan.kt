@@ -14,9 +14,14 @@ object AutoScan {
     suspend fun ingest(c: AppContainer, text: String, source: String, fallbackMerchant: String? = null, sender: String = ""): Boolean {
         val s = c.settings.flow.first()
         if (!s.autoScan || sender in s.mutedSenders) return false
-        var p = SmsParser.parse(text, LocalDate.now(c.clock), s.defaultCurrency) ?: return false
-        if (p.merchant == null && !fallbackMerchant.isNullOrBlank()) p = p.copy(merchant = fallbackMerchant.trim().take(40))
-        val added = c.txns.addIfNew(p, source, text, sender)
+        val today = LocalDate.now(c.clock)
+        var added = false
+        SmsParser.parse(text, today, s.defaultCurrency)?.let { parsed ->
+            val p = if (parsed.merchant == null && !fallbackMerchant.isNullOrBlank()) parsed.copy(merchant = fallbackMerchant.trim().take(40)) else parsed
+            added = c.txns.addIfNew(p, source, text, sender)
+        }
+        // Messages that are not a plain payment (an EMI reminder, a subscription receipt) can still describe a loan or a subscription.
+        AutoTracker.onNewMessage(c, text, today, source, sender)
         if (added) { markMatchedEmis(c); app.forgetit.reminders.BudgetAlerts.check(c) }
         return added
     }
@@ -44,7 +49,7 @@ object AutoScan {
         if (!SmsScanner.hasPermission(c.context)) return -1
         val today = LocalDate.now(c.clock)
         val days = if (s.lastScanDay == 0L) 90L else (today.toEpochDay() - s.lastScanDay + 1).coerceIn(2, 90)
-        val n = SmsScanner.scanInbox(c.context, c.txns, today.minusDays(days), s.defaultCurrency, ZoneId.systemDefault(), s.mutedSenders)
+        val n = SmsScanner.scanInbox(c.context, c.txns, today.minusDays(days), s.defaultCurrency, ZoneId.systemDefault(), s.mutedSenders) { body, day -> AutoTracker.onNewMessage(c, body, day, "SMS") }
         if (n >= 0) c.settings.setLastScanDay(today.toEpochDay())
         if (n > 0) { markMatchedEmis(c); app.forgetit.reminders.BudgetAlerts.check(c) }
         if (n > 0 && notify) Notifications.showFound(c.context, n)

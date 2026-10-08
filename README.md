@@ -78,3 +78,12 @@ Nothing here sends data anywhere: messages are read on the phone, and only payme
 ## Phones, tablets and screen sizes
 
 The layout adapts to the screen. Phones get the bottom tab bar; screens 600 dp wide and up (tablets, foldables, landscape) get a navigation rail on the left instead. Content keeps a comfortable reading width and stays centred on large screens, and the quick-action buttons shrink to fit narrow phones. Below 360 dp the tab bar shows icons only. Lists leave room under the add button so nothing is hidden behind it.
+
+## Automatic subscriptions and loans
+
+- **From one confirmation message**: a receipt or confirmation email, notification or SMS for a subscription (for example a one-year Claude plan) creates the subscription by itself: the name, how much you paid, the date you paid, the billing cycle, when it renews or ends, the card it was paid with, and the account or cancel link for known services. The payment also appears in the Money ledger.
+- **From repeated charges**: a charge that repeats on a steady cycle is added as a subscription too.
+- **Loans**: an EMI message that states the amount and the number of months creates the loan; the same EMI two months in a row does too, with the instalments already seen marked paid. Loan amount, rate and length are estimates and the loan says so.
+- **Undo**: every automatic addition posts a notification with an Undo button. Undoing removes it and remembers the choice so it is not added again.
+- **Switches**: Settings, Capture has separate switches for adding subscriptions and for creating loans.
+- Promotional messages (offers, discounts, "% off") are ignored, and anything you already track is not added twice.

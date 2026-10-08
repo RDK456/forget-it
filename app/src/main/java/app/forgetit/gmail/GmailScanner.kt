@@ -5,6 +5,7 @@ import app.forgetit.domain.GmailText
 import app.forgetit.domain.SmsParser
 import app.forgetit.reminders.Notifications
 import app.forgetit.txn.AutoScan
+import app.forgetit.txn.AutoTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -74,12 +75,17 @@ object GmailScanner {
                 if (from in s.mutedSenders) continue
                 val day = LocalDate.ofInstant(Instant.ofEpochMilli(msg.optLong("internalDate", nowSec * 1000)), ZoneId.systemDefault())
                 val text = "$subject. ${msg.optString("snippet")}"
-                val parsed = SmsParser.parse(text, day, s.defaultCurrency) ?: SmsParser.parse("$subject. ${bodyText(payload)}", day, s.defaultCurrency) ?: continue
-                val p = if (parsed.merchant == null) parsed.copy(merchant = from.take(40)) else parsed
-                if (c.txns.addIfNew(p, "GMAIL", text, from)) added++
+                val body = bodyText(payload)
+                val parsed = SmsParser.parse(text, day, s.defaultCurrency) ?: SmsParser.parse("$subject. $body", day, s.defaultCurrency)
+                if (parsed != null) {
+                    val p = if (parsed.merchant == null) parsed.copy(merchant = from.take(40)) else parsed
+                    if (c.txns.addIfNew(p, "GMAIL", text, from)) added++
+                }
+                // A receipt or confirmation email can describe a subscription or loan even when it is not a plain payment line.
+                AutoTracker.onNewMessage(c, "$from\n$subject\n$body", day, "GMAIL", from)
             }
             c.settings.setGmailLastSync(nowSec)
-            if (added > 0) AutoScan.markMatchedEmis(c)
+            if (added > 0) { AutoScan.markMatchedEmis(c); app.forgetit.txn.AutoTracker.onNewPayments(c) }
             if (added > 0 && notify) Notifications.showFound(c.context, added)
             added
         } catch (e: Exception) {

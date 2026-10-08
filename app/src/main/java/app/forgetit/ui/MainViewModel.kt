@@ -288,6 +288,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
             if (s.gmailEmail.isNotEmpty()) app.forgetit.gmail.GmailScanner.sync(c)
         }
         app.forgetit.txn.AutoScan.markMatchedEmis(c)
+        app.forgetit.txn.AutoTracker.onNewPayments(c)
         c.reminders.sync()
     }
     /** Reads an .xlsx or .csv file into records for review. Throws with a message the user can read. */
@@ -336,12 +337,15 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
             if (learn) c.txns.setCategory(t, t.category)
         }
         app.forgetit.reminders.BudgetAlerts.check(c)
+        if (isNew) app.forgetit.txn.AutoTracker.onNewPayments(c)
     }
 
     fun setCategoryBudget(category: String, limitMinor: Long) = viewModelScope.launch {
         c.txns.setBudget(category, limitMinor)
         app.forgetit.reminders.BudgetAlerts.check(c)
     }
+    fun setAutoAddSubs(on: Boolean) = viewModelScope.launch { c.settings.setAutoAddSubs(on); if (on) app.forgetit.txn.AutoTracker.onNewPayments(c) }
+    fun setAutoCreateLoans(on: Boolean) = viewModelScope.launch { c.settings.setAutoCreateLoans(on); if (on) app.forgetit.txn.AutoTracker.onNewPayments(c) }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor); app.forgetit.reminders.BudgetAlerts.check(c) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }

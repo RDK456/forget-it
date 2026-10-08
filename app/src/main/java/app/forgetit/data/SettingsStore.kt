@@ -28,6 +28,9 @@ class SettingsStore(private val context: Context) {
         val payday = intPreferencesKey("payday")
         val digest = booleanPreferencesKey("weekly_digest")
         val autoScan = booleanPreferencesKey("auto_scan")
+        val autoSubs = booleanPreferencesKey("auto_add_subs")
+        val autoLoans = booleanPreferencesKey("auto_create_loans")
+        val autoDismissed = stringSetPreferencesKey("auto_dismissed")
         val budgetAlerts = stringSetPreferencesKey("budget_alerts")
         val autoUpdate = booleanPreferencesKey("auto_update_check")
         val notifiedUpdate = stringPreferencesKey("notified_update")
@@ -51,6 +54,9 @@ class SettingsStore(private val context: Context) {
             paydayDay = (p[Keys.payday] ?: base.paydayDay).coerceIn(0, 31),
             weeklyDigest = p[Keys.digest] ?: base.weeklyDigest,
             autoScan = p[Keys.autoScan] ?: base.autoScan,
+            autoAddSubs = p[Keys.autoSubs] ?: base.autoAddSubs,
+            autoCreateLoans = p[Keys.autoLoans] ?: base.autoCreateLoans,
+            autoDismissed = p[Keys.autoDismissed] ?: emptySet(),
             budgetAlerts = p[Keys.budgetAlerts] ?: emptySet(),
             autoUpdateCheck = p[Keys.autoUpdate] ?: base.autoUpdateCheck,
             notifiedUpdate = p[Keys.notifiedUpdate].orEmpty(),
@@ -75,6 +81,9 @@ class SettingsStore(private val context: Context) {
     suspend fun setPayday(day: Int) = update { it[Keys.payday] = day.coerceIn(0, 31) }
     suspend fun setWeeklyDigest(on: Boolean) = update { it[Keys.digest] = on }
     suspend fun setAutoScan(on: Boolean) = update { it[Keys.autoScan] = on }
+    suspend fun setAutoAddSubs(on: Boolean) = update { it[Keys.autoSubs] = on }
+    suspend fun setAutoCreateLoans(on: Boolean) = update { it[Keys.autoLoans] = on }
+    suspend fun setAutoDismissed(v: Set<String>) = update { it[Keys.autoDismissed] = v }
     suspend fun setBudgetAlerts(v: Set<String>) = update { it[Keys.budgetAlerts] = v }
     suspend fun setAutoUpdateCheck(on: Boolean) = update { it[Keys.autoUpdate] = on }
     suspend fun setNotifiedUpdate(v: String) = update { it[Keys.notifiedUpdate] = v }

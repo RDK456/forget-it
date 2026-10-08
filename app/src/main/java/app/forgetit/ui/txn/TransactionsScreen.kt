@@ -51,7 +51,7 @@ fun TransactionsScreen(vm: MainViewModel, today: LocalDate, onBack: () -> Unit) 
     val live = txns.filter { it.status != "IGNORED" }
     val month = YearMonth.from(today)
     val thisMonth = live.filter { YearMonth.from(it.date) == month }
-    val suggestions = TxnMatching.recurring(live, subs.map { it.name } + loans.map { it.name })
+    val suggestions = TxnMatching.recurring(live, subs.map { it.name } + loans.map { it.name }).filter { app.forgetit.domain.AutoTrack.subKey(it.merchant) !in settings.autoDismissed }
     val priceChanges = app.forgetit.domain.PriceWatch.changes(live, subs, today)
     val emi = TxnMatching.emiMatches(live, loans, adj, pay, today)
 
