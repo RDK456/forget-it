@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.ui.unit.dp
@@ -95,10 +96,19 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
     androidx.compose.runtime.LaunchedEffect(Unit) { askScan = !container.settings.flow.first().scanPrompted }
     if (askScan) app.forgetit.ui.txn.ScanSetupDialog(vm) { askScan = false }
 
+    val widthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
+    val wide = widthDp >= 600
+    val goTab: (String) -> Unit = { r ->
+        nav.navigate(r) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            if (route in TABS.map { it.route }) {
+            if (!wide && route in TABS.map { it.route }) {
                 NavigationBar {
                     TABS.forEach { t ->
                         NavigationBarItem(
@@ -110,16 +120,28 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
                                     restoreState = true
                                 }
                             },
-                            icon = { val sc = bounceScale(route == t.route); Icon(t.icon, contentDescription = null, modifier = Modifier.graphicsLayer { scaleX = sc; scaleY = sc }) },
-                            label = { Text(t.label) },
+                            icon = { val sc = bounceScale(route == t.route); Icon(t.icon, contentDescription = t.label, modifier = Modifier.graphicsLayer { scaleX = sc; scaleY = sc }) },
+                            label = if (widthDp < 360) null else ({ Text(t.label, maxLines = 1) }),
+                            alwaysShowLabel = widthDp >= 360,
                         )
                     }
                 }
             }
         },
     ) { pad ->
+      androidx.compose.foundation.layout.Row(Modifier.padding(pad)) {
+        if (wide && route in TABS.map { it.route }) androidx.compose.material3.NavigationRail {
+            TABS.forEach { t ->
+                androidx.compose.material3.NavigationRailItem(
+                    selected = route == t.route, onClick = { goTab(t.route) },
+                    icon = { val sc = bounceScale(route == t.route); Icon(t.icon, contentDescription = null, modifier = Modifier.graphicsLayer { scaleX = sc; scaleY = sc }) },
+                    label = { Text(t.label, maxLines = 1) },
+                    alwaysShowLabel = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp >= 520,
+                )
+            }
+        }
         NavHost(
-            nav, startDestination = "overview", modifier = Modifier.padding(pad),
+            nav, startDestination = "overview", modifier = Modifier.weight(1f).fillMaxHeight(),
             enterTransition = { fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 14 } },
             exitTransition = { fadeOut(tween(120)) },
             popEnterTransition = { fadeIn(tween(220)) },
@@ -155,6 +177,7 @@ fun ForgetItRoot(container: AppContainer, sharedText: String? = null, onSharedCo
             composable("share") { ShareImportScreen(vm, sharedText.orEmpty(), today, onDone = { onSharedConsumed(); nav.popBackStack() }) }
             composable("edit/{id}") { e -> EditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
         }
+      }
     }
 }
 

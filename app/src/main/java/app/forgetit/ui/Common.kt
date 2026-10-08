@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.OutlinedCard
@@ -79,7 +81,11 @@ fun ScreenScaffold(title: String, onBack: (() -> Unit)?, content: @Composable (P
                 },
             )
         },
-        content = content,
+        content = { pad ->
+            Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxSize()) { content(pad) }
+            }
+        },
     )
 }
 
@@ -93,11 +99,14 @@ fun ListScreen(
     content: LazyListScope.() -> Unit,
 ) {
     if (onRefresh == null) {
-        LazyColumn(Modifier.padding(pad), state, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        Box(Modifier.fillMaxSize().padding(pad), contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
+            LazyColumn(Modifier.widthIn(max = 760.dp).fillMaxSize(), state, contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        }
         return
     }
     var refreshing by remember { mutableStateOf(false) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
+    Box(Modifier.fillMaxSize().padding(pad), contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
     androidx.compose.material3.pulltorefresh.PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = {
@@ -110,9 +119,10 @@ fun ListScreen(
                 refreshing = false
             }
         },
-        modifier = Modifier.padding(pad),
+        modifier = Modifier.widthIn(max = 760.dp).fillMaxSize(),
     ) {
-        LazyColumn(Modifier.fillMaxSize(), state, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        LazyColumn(Modifier.fillMaxSize(), state, contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+    }
     }
 }
 

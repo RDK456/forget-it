@@ -74,3 +74,7 @@ Nothing here sends data anywhere: messages are read on the phone, and only payme
 
 - **Tap any category** on the Money tab (or the Highest spending card) to see where that money went: the total and change against last month, a day-by-day chart with weekly totals, the merchants ranked by spend, and every payment with its date. Tap a merchant to list only its payments, tap a payment to edit it, and set the category's limit from there.
 - **Scan a bill for stock**: on the Stock tab the camera button reads a grocery bill and adds every item with its quantity automatically (or restocks items you already track). Lines like "2 x 1.50 3.00", "Rice 5kg" and "Milk 1L" are understood, and photographing the same bill twice does not add it twice.
+
+## Phones, tablets and screen sizes
+
+The layout adapts to the screen. Phones get the bottom tab bar; screens 600 dp wide and up (tablets, foldables, landscape) get a navigation rail on the left instead. Content keeps a comfortable reading width and stays centred on large screens, and the quick-action buttons shrink to fit narrow phones. Below 360 dp the tab bar shows icons only. Lists leave room under the add button so nothing is hidden behind it.

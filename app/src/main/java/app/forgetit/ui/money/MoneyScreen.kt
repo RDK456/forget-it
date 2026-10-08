@@ -84,7 +84,7 @@ fun MoneyScreen(vm: MainViewModel, today: LocalDate, openAdd: Boolean, onOpenDet
     val budgets by vm.categoryBudgets.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val cur = settings.defaultCurrency
-    val rates = settings.rates.mapValues { it.value.value }
+    val rates = remember(settings.rates) { settings.rates.mapValues { it.value.value } }
 
     var monthIdx by rememberSaveable { mutableIntStateOf(today.year * 12 + today.monthValue - 1) }
     val month = YearMonth.of(monthIdx / 12, monthIdx % 12 + 1)
@@ -100,15 +100,15 @@ fun MoneyScreen(vm: MainViewModel, today: LocalDate, openAdd: Boolean, onOpenDet
     val addRequest by vm.addTxnRequest.collectAsStateWithLifecycle()
     LaunchedEffect(addRequest) { if (addRequest) { adding = true; vm.addTxnRequest.value = false } }
 
-    val summary = SpendStats.summary(txns, month, cur, rates, rules)
-    val trend = SpendStats.trend(txns, month, 6, cur, rates, rules)
+    val summary = remember(txns, month, cur, rates, rules) { SpendStats.summary(txns, month, cur, rates, rules) }
+    val trend = remember(txns, month, cur, rates, rules) { SpendStats.trend(txns, month, 6, cur, rates, rules) }
     val rows = summary.byCategory + budgets.keys.filter { c -> summary.byCategory.none { it.category == c } }.map { CategorySpend(it, 0, 0, 0) }
-    val inMonth = txns.filter { it.status != "IGNORED" && YearMonth.from(it.date) == month }
-    val shown = inMonth.filter { t ->
+    val inMonth = remember(txns, month) { txns.filter { it.status != "IGNORED" && YearMonth.from(it.date) == month } }
+    val shown = remember(inMonth, filter, catFilter, query, rules) { inMonth.filter { t ->
         (filter == "All" || (filter == "Out" && t.direction == TxnDirection.DEBIT) || (filter == "In" && t.direction == TxnDirection.CREDIT)) &&
             (catFilter == null || t.categoryOr(rules) == catFilter) &&
             (query.isBlank() || listOf(t.merchant.orEmpty(), t.note, t.snippet, t.categoryOr(rules)).any { it.contains(query, ignoreCase = true) })
-    }.sortedWith(compareByDescending<Txn> { it.date }.thenByDescending { it.id })
+    }.sortedWith(compareByDescending<Txn> { it.date }.thenByDescending { it.id }) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Money") }) },

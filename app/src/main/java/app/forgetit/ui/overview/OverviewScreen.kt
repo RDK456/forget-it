@@ -89,7 +89,9 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate, onQuick: (String) -> Uni
     val updateState by vm.c.updater.state.collectAsStateWithLifecycle()
     val allTxns by vm.txns.collectAsStateWithLifecycle()
     val txnRules by vm.categoryRules.collectAsStateWithLifecycle()
-    val spend = app.forgetit.domain.SpendStats.summary(allTxns, java.time.YearMonth.from(today), settings.defaultCurrency, settings.rates.mapValues { it.value.value }, txnRules)
+    val spend = remember(allTxns, txnRules, settings.rates, settings.defaultCurrency, today) {
+        app.forgetit.domain.SpendStats.summary(allTxns, java.time.YearMonth.from(today), settings.defaultCurrency, settings.rates.mapValues { it.value.value }, txnRules)
+    }
 
     val rates = settings.rates.mapValues { it.value.value }
     val cur = settings.defaultCurrency

@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -89,7 +91,7 @@ fun QuickTile(icon: ImageVector, label: String, brush: TrackerBrush, modifier: M
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Box(
-            Modifier.size(58.dp).clip(RoundedCornerShape(20.dp)).background(Brush.linearGradient(listOf(brush.from, brush.to))),
+            Modifier.widthIn(max = 58.dp).fillMaxWidth(0.88f).aspectRatio(1f).clip(RoundedCornerShape(20.dp)).background(Brush.linearGradient(listOf(brush.from, brush.to))),
             contentAlignment = Alignment.Center,
         ) { Icon(icon, label, Modifier.size(28.dp), tint = brush.on) }
         Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1)
