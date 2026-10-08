@@ -21,7 +21,10 @@ class Reminders(private val c: AppContainer) {
         return ReminderPlanner.subscriptions(c.subscriptions.getAll(), now, minute, notified)
     }
 
-    suspend fun sync() = mutex.withLock { scheduler.sync(plan(ZonedDateTime.now(c.clock))) }
+    suspend fun sync() {
+        mutex.withLock { scheduler.sync(plan(ZonedDateTime.now(c.clock))) }
+        app.forgetit.widget.refreshWidgets(c.context)
+    }
 
     /** Called by the alarm receiver. Shows the notification only if the key is still planned and not yet shown. */
     suspend fun fire(key: String) = mutex.withLock {

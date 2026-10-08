@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Forget-it</string>
+    <string name="widget_description">Monthly outgo and your next charges</string>
 </resources>
