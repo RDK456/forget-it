@@ -35,6 +35,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.forgetit.AppContainer
+import app.forgetit.ui.edit.EditScreen
+import app.forgetit.ui.edit.EditViewModel
 import app.forgetit.ui.overview.OverviewScreen
 import app.forgetit.ui.subscriptions.SubscriptionsScreen
 import java.time.LocalDate
@@ -90,7 +92,7 @@ fun ForgetItRoot(container: AppContainer) {
             composable("calendar") { ComingSoon("Calendar", onBack = { nav.popBackStack() }) }
             composable("insights") { ComingSoon("Insights", onBack = { nav.popBackStack() }) }
             composable("settings") { ComingSoon("Settings", onBack = { nav.popBackStack() }) }
-            composable("edit/{id}") { ComingSoon("Edit", onBack = { nav.popBackStack() }) }
+            composable("edit/{id}") { e -> EditRoute(e.arguments?.getString("id")?.toLongOrNull() ?: 0L, container, nav) }
         }
     }
 }
@@ -119,4 +121,10 @@ private fun MoreScreen(nav: NavController) {
             }
         }
     }
+}
+
+@Composable
+private fun EditRoute(id: Long, container: AppContainer, nav: NavController) {
+    val evm: EditViewModel = viewModel(key = "edit$id", factory = viewModelFactory { initializer { EditViewModel(container, id) } })
+    EditScreen(evm, onDone = { nav.popBackStack() })
 }
