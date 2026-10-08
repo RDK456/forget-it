@@ -319,6 +319,7 @@ class MainViewModel(val c: AppContainer) : ViewModel() {
         } catch (e: Exception) { "Could not save the Excel file" }
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { onDone(msg) }
     }
+    fun setAutoUpdateCheck(on: Boolean) = viewModelScope.launch { c.settings.setAutoUpdateCheck(on) }
     fun setBudget(minor: Long) = viewModelScope.launch { c.settings.setBudget(minor) }
     fun setAutoScan(on: Boolean) = viewModelScope.launch { c.settings.setAutoScan(on) }
     fun setAutoMarkEmi(on: Boolean) = viewModelScope.launch { c.settings.setAutoMarkEmi(on) }

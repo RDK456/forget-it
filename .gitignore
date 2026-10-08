@@ -5,3 +5,6 @@ local.properties
 *.iml
 .remember/
 .claude/
+keystore.properties
+*.jks
+*.keystore

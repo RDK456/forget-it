@@ -34,6 +34,7 @@ import app.forgetit.domain.billMonthlyOutgo
 import app.forgetit.ui.billIcon
 import app.forgetit.ui.theme.domainColors
 import app.forgetit.domain.Money
+import app.forgetit.ui.pressScale
 import app.forgetit.ui.AnimatedProgress
 import app.forgetit.domain.Renewal
 import app.forgetit.domain.RowStatus
@@ -85,6 +86,7 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate, onQuick: (String) -> Uni
     val billEntries by vm.billEntries.collectAsStateWithLifecycle()
     val billTint = domainColors.bill
     val haptic = LocalHapticFeedback.current
+    val updateState by vm.c.updater.state.collectAsStateWithLifecycle()
 
     val rates = settings.rates.mapValues { it.value.value }
     val cur = settings.defaultCurrency
@@ -157,6 +159,14 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate, onQuick: (String) -> Uni
             ListScreen(pad, onRefresh = { vm.refreshAll() }) {
                 item { RemyHeader(mood, greeting, message) }
                 item { app.forgetit.ui.QuickActions(onQuick) }
+                (updateState as? app.forgetit.update.UpdateState.Available)?.let { u ->
+                    item {
+                        app.forgetit.ui.GradientHeader(
+                            app.forgetit.ui.AppIcons.Download, "Update available", app.forgetit.ui.theme.Brushes.scan, Modifier.pressScale { onQuick("settings") },
+                            bigText = "Version ${u.plan.version}", supporting = "Tap to update",
+                        )
+                    }
+                }
                 item { OutgoHero(subTotals.monthlyMinor, emi.monthlyMinor, billOut.monthlyMinor, totals.yearlyMinor, cur, totals.excluded) }
                 if (settings.budgetMinor > 0) item { BudgetBar(monthlyAll, settings.budgetMinor, cur) }
                 item { Text("Coming up in $UPCOMING_DAYS days", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp)) }

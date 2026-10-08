@@ -5,6 +5,13 @@ import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Bell
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Camera
+import com.composables.icons.lucide.ScanLine
+import com.composables.icons.lucide.Info
+import com.composables.icons.lucide.Database
+import com.composables.icons.lucide.ShieldCheck
+import com.composables.icons.lucide.Palette
+import com.composables.icons.lucide.Wallet
+import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.FileSpreadsheet
 import com.composables.icons.lucide.Mic
 import com.composables.icons.lucide.ChartPie
@@ -45,6 +52,13 @@ object AppIcons {
     val Previous: ImageVector get() = Lucide.ChevronLeft
     val Next: ImageVector get() = Lucide.ChevronRight
     val Camera: ImageVector get() = Lucide.Camera
+    val Scan: ImageVector get() = Lucide.ScanLine
+    val About: ImageVector get() = Lucide.Info
+    val Database: ImageVector get() = Lucide.Database
+    val Privacy: ImageVector get() = Lucide.ShieldCheck
+    val Palette: ImageVector get() = Lucide.Palette
+    val Wallet: ImageVector get() = Lucide.Wallet
+    val Download: ImageVector get() = Lucide.Download
     val Sheet: ImageVector get() = Lucide.FileSpreadsheet
     val Mic: ImageVector get() = Lucide.Mic
     val Gallery: ImageVector get() = Lucide.Image

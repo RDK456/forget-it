@@ -28,6 +28,8 @@ class SettingsStore(private val context: Context) {
         val payday = intPreferencesKey("payday")
         val digest = booleanPreferencesKey("weekly_digest")
         val autoScan = booleanPreferencesKey("auto_scan")
+        val autoUpdate = booleanPreferencesKey("auto_update_check")
+        val notifiedUpdate = stringPreferencesKey("notified_update")
         val gmailEmail = stringPreferencesKey("gmail_email")
         val gmailLast = longPreferencesKey("gmail_last_sync")
         val muted = stringSetPreferencesKey("muted_senders")
@@ -48,6 +50,8 @@ class SettingsStore(private val context: Context) {
             paydayDay = (p[Keys.payday] ?: base.paydayDay).coerceIn(0, 31),
             weeklyDigest = p[Keys.digest] ?: base.weeklyDigest,
             autoScan = p[Keys.autoScan] ?: base.autoScan,
+            autoUpdateCheck = p[Keys.autoUpdate] ?: base.autoUpdateCheck,
+            notifiedUpdate = p[Keys.notifiedUpdate].orEmpty(),
             gmailEmail = p[Keys.gmailEmail].orEmpty(),
             gmailLastSync = p[Keys.gmailLast] ?: 0L,
             mutedSenders = p[Keys.muted] ?: emptySet(),
@@ -69,6 +73,8 @@ class SettingsStore(private val context: Context) {
     suspend fun setPayday(day: Int) = update { it[Keys.payday] = day.coerceIn(0, 31) }
     suspend fun setWeeklyDigest(on: Boolean) = update { it[Keys.digest] = on }
     suspend fun setAutoScan(on: Boolean) = update { it[Keys.autoScan] = on }
+    suspend fun setAutoUpdateCheck(on: Boolean) = update { it[Keys.autoUpdate] = on }
+    suspend fun setNotifiedUpdate(v: String) = update { it[Keys.notifiedUpdate] = v }
     suspend fun setGmailEmail(email: String) = update { it[Keys.gmailEmail] = email; if (email.isEmpty()) it[Keys.gmailLast] = 0L }
     suspend fun setGmailLastSync(sec: Long) = update { it[Keys.gmailLast] = sec }
     suspend fun setMuted(senders: Set<String>) = update { it[Keys.muted] = senders }

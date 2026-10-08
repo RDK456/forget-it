@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- clock ring and quarter ticks -->
+    <path android:pathData="M54,26a28,28 0 1,0 0.01,0z" android:strokeColor="#FFFFFF" android:strokeWidth="4" android:fillColor="#00000000"/>
+    <path android:pathData="M54,31.5L54,35M76.5,54L73,54M54,76.5L54,73M31.5,54L35,54" android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round"/>
+    <!-- basket body, rim and weave -->
+    <path android:pathData="M44,54L64,54L61.5,67.5Q61.2,69 59.7,69L48.3,69Q46.8,69 46.5,67.5Z" android:fillColor="#FFFFFF"/>
+    <path android:pathData="M42,54L66,54" android:strokeColor="#FFFFFF" android:strokeWidth="3.4" android:strokeLineCap="round"/>
+    <path android:pathData="M50,58L50.6,65M54,58L54,65M58,58L57.4,65" android:strokeColor="#00000000" android:strokeWidth="1.6" android:strokeLineCap="round"/>
+    <!-- basket handles, which are also the clock hands at ten past ten -->
+    <path android:pathData="M54,54L46.5,41.5M54,54L63.5,40.5" android:strokeColor="#FFFFFF" android:strokeWidth="3.2" android:strokeLineCap="round"/>
+</vector>

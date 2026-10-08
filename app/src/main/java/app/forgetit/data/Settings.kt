@@ -15,6 +15,8 @@ data class Settings(
     val paydayDay: Int = 0,
     val weeklyDigest: Boolean = true,
     val autoScan: Boolean = true,
+    val autoUpdateCheck: Boolean = true,
+    val notifiedUpdate: String = "",
     val gmailEmail: String = "",
     val gmailLastSync: Long = 0,
     val mutedSenders: Set<String> = emptySet(),

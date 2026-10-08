@@ -15,6 +15,16 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
         c.photos.sweepOrphans()
         app.forgetit.txn.AutoScan.scanDue(c, notify = true)
         if (c.settings.flow.first().autoScan) app.forgetit.gmail.GmailScanner.sync(c, notify = true)
+        val s = c.settings.flow.first()
+        if (s.autoUpdateCheck) {
+            c.updater.check()
+            (c.updater.state.value as? app.forgetit.update.UpdateState.Available)?.plan?.let { plan ->
+                if (plan.version != s.notifiedUpdate) {
+                    Notifications.showInfo(c.context, 7200, "Forget-it update available", "Version ${plan.version} is ready. Open Settings to install it.", Notifications.CH_UPDATE)
+                    c.settings.setNotifiedUpdate(plan.version)
+                }
+            }
+        }
         c.reminders.sync()
         return Result.success()
     }

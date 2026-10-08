@@ -53,75 +53,117 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
     var timeDialog by remember { mutableStateOf(false) }
     val needed = subs.map { it.currency }.toSet() - s.defaultCurrency - s.rates.keys
 
+    val brushes = app.forgetit.ui.theme.Brushes
     ScreenScaffold("Settings", onBack) { pad ->
         ListScreen(pad) {
-            item { SectionTitle("Default currency") }
+            item { UpdateSection(vm, s.autoUpdateCheck) }
+
             item {
-                OutlinedTextField(
-                    currencyText,
-                    { v ->
-                        currencyText = v.take(3).uppercase()
-                        if (Money.isValidCurrency(currencyText)) vm.setCurrency(currencyText)
-                    },
-                    label = { Text("Currency code, for example USD or INR") }, singleLine = true,
-                    isError = !Money.isValidCurrency(currencyText), modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            item { SectionTitle("Monthly budget") }
-            item {
-                var b by rememberSaveable(s.budgetMinor) {
-                    mutableStateOf(if (s.budgetMinor > 0) java.math.BigDecimal(s.budgetMinor).movePointLeft(Money.fractionDigits(s.defaultCurrency)).toPlainString() else "")
-                }
-                val parsed = if (b.isBlank()) 0L else Money.parseMinor(b, s.defaultCurrency)
-                OutlinedTextField(
-                    b, { v -> b = v; val m = if (v.isBlank()) 0L else Money.parseMinor(v, s.defaultCurrency); if (m != null && m >= 0) vm.setBudget(m) },
-                    label = { Text("Total per month in ${s.defaultCurrency}, empty for none") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = parsed == null, modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            item { SectionTitle("Exchange rates") }
-            item { Text("Rates convert other currencies into ${s.defaultCurrency} for totals. They are entered by hand and never fetched online.") }
-            if (needed.isNotEmpty()) item { Text("Missing a rate for: ${needed.joinToString()}", color = MaterialTheme.colorScheme.error) }
-            for ((code, r) in s.rates) item(key = "rate$code") {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("1 $code = ${r.value.toPlainString()} ${s.defaultCurrency}  (set ${r.editedOn})", Modifier.weight(1f))
-                    IconButton({ vm.removeRate(code) }) { Icon(AppIcons.Delete, "Remove rate for $code") }
-                }
-            }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(rateCode, { rateCode = it.take(3).uppercase() }, label = { Text("From") }, singleLine = true, modifier = Modifier.weight(0.7f))
+                SettingsGroup(
+                    AppIcons.Wallet, "Money",
+                    s.defaultCurrency + (if (s.budgetMinor > 0) ", budget " + Money.format(s.budgetMinor, s.defaultCurrency) else ", no budget") +
+                        (if (s.rates.isNotEmpty()) ", ${s.rates.size} rate(s)" else ""),
+                    brushes.subscription,
+                ) {
+                    SectionTitle("Default currency")
                     OutlinedTextField(
-                        rateValue, { rateValue = it }, label = { Text("Rate") }, singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
+                        currencyText,
+                        { v ->
+                            currencyText = v.take(3).uppercase()
+                            if (Money.isValidCurrency(currencyText)) vm.setCurrency(currencyText)
+                        },
+                        label = { Text("Currency code, for example USD or INR") }, singleLine = true,
+                        isError = !Money.isValidCurrency(currencyText), modifier = Modifier.fillMaxWidth(),
                     )
-                    val parsed = rateValue.replace(',', '.').toBigDecimalOrNull()
-                    Button(
-                        onClick = { vm.setRate(rateCode, parsed!!); rateCode = ""; rateValue = "" },
-                        enabled = Money.isValidCurrency(rateCode) && rateCode != s.defaultCurrency && parsed != null && parsed > BigDecimal.ZERO,
-                    ) { Text("Add") }
+                    SectionTitle("Monthly budget")
+                    var b by rememberSaveable(s.budgetMinor) {
+                        mutableStateOf(if (s.budgetMinor > 0) java.math.BigDecimal(s.budgetMinor).movePointLeft(Money.fractionDigits(s.defaultCurrency)).toPlainString() else "")
+                    }
+                    val parsedBudget = if (b.isBlank()) 0L else Money.parseMinor(b, s.defaultCurrency)
+                    OutlinedTextField(
+                        b, { v -> b = v; val m = if (v.isBlank()) 0L else Money.parseMinor(v, s.defaultCurrency); if (m != null && m >= 0) vm.setBudget(m) },
+                        label = { Text("Total per month in ${s.defaultCurrency}, empty for none") }, singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = parsedBudget == null, modifier = Modifier.fillMaxWidth(),
+                    )
+                    SectionTitle("Exchange rates")
+                    Text("Rates convert other currencies into ${s.defaultCurrency} for totals. They are entered by hand and never fetched online.", style = MaterialTheme.typography.bodySmall)
+                    if (needed.isNotEmpty()) Text("Missing a rate for: ${needed.joinToString()}", color = MaterialTheme.colorScheme.error)
+                    for ((code, r) in s.rates) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("1 $code = ${r.value.toPlainString()} ${s.defaultCurrency}  (set ${r.editedOn})", Modifier.weight(1f))
+                            IconButton({ vm.removeRate(code) }) { Icon(AppIcons.Delete, "Remove rate for $code") }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(rateCode, { rateCode = it.take(3).uppercase() }, label = { Text("From") }, singleLine = true, modifier = Modifier.weight(0.7f))
+                        OutlinedTextField(
+                            rateValue, { rateValue = it }, label = { Text("Rate") }, singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
+                        )
+                        val parsed = rateValue.replace(',', '.').toBigDecimalOrNull()
+                        Button(
+                            onClick = { vm.setRate(rateCode, parsed!!); rateCode = ""; rateValue = "" },
+                            enabled = Money.isValidCurrency(rateCode) && rateCode != s.defaultCurrency && parsed != null && parsed > BigDecimal.ZERO,
+                        ) { Text("Add") }
+                    }
                 }
             }
-            item { SectionTitle("Auto-scan messages") }
-            item { var m by remember { mutableStateOf<String?>(null) }; Column { app.forgetit.ui.txn.AutoScanSection(vm, s) { m = it }; m?.let { Text(it, style = MaterialTheme.typography.bodySmall) } } }
-            item { SectionTitle("Reminder time") }
+
             item {
-                val m = s.reminderMinuteOfDay
-                OutlinedButton({ timeDialog = true }, Modifier.fillMaxWidth()) { Text("Remind me at %02d:%02d".format(m / 60, m % 60)) }
-            }
-            item { SectionTitle("Payday and weekly summary") }
-            item {
-                app.forgetit.ui.edit.Dropdown("Payday (snooze a reminder until then)", s.paydayDay, (0..31).toList(), { if (it == 0) "Not set" else "Day $it of the month" }) { vm.setPayday(it) }
-            }
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Weekly summary every Monday", Modifier.weight(1f)); androidx.compose.material3.Switch(s.weeklyDigest, vm::setWeeklyDigest)
+                SettingsGroup(
+                    AppIcons.Scan, "Capture",
+                    (if (s.autoScan) "Auto-scan on" else "Auto-scan off") + (if (s.gmailEmail.isNotEmpty()) ", Gmail connected" else "") + (if (s.autoMarkEmi) ", EMIs marked automatically" else ""),
+                    brushes.scan,
+                ) {
+                    var m by remember { mutableStateOf<String?>(null) }
+                    app.forgetit.ui.txn.AutoScanSection(vm, s) { m = it }
+                    m?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }
             }
-            item { ThemeSection(s.theme, vm::setTheme) }
-            item { LockSection(s.biometricLock, vm::setBiometric) }
-            item { HealthSection(health, onTest = { vm.c.reminders.sendTest() }) }
-            item { BackupSection(vm) }
+
+            item {
+                SettingsGroup(
+                    AppIcons.Bell, "Reminders",
+                    "At %02d:%02d".format(s.reminderMinuteOfDay / 60, s.reminderMinuteOfDay % 60) + (if (s.weeklyDigest) ", weekly summary on" else ", weekly summary off"),
+                    brushes.loan,
+                ) {
+                    val m = s.reminderMinuteOfDay
+                    OutlinedButton({ timeDialog = true }, Modifier.fillMaxWidth()) { Text("Remind me at %02d:%02d".format(m / 60, m % 60)) }
+                    app.forgetit.ui.edit.Dropdown("Payday (snooze a reminder until then)", s.paydayDay, (0..31).toList(), { if (it == 0) "Not set" else "Day $it of the month" }) { vm.setPayday(it) }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Weekly summary every Monday", Modifier.weight(1f)); androidx.compose.material3.Switch(s.weeklyDigest, vm::setWeeklyDigest)
+                    }
+                    HealthSection(health, onTest = { vm.c.reminders.sendTest() })
+                }
+            }
+
+            item {
+                SettingsGroup(
+                    AppIcons.Palette, "Appearance",
+                    "Theme: " + s.theme.name.lowercase().replaceFirstChar { it.uppercase() },
+                    brushes.berry,
+                ) { ThemeSection(s.theme, vm::setTheme) }
+            }
+
+            item {
+                SettingsGroup(AppIcons.Privacy, "Privacy and security", if (s.biometricLock) "App lock is on" else "App lock is off", brushes.bill) {
+                    LockSection(s.biometricLock, vm::setBiometric)
+                }
+            }
+
+            item {
+                SettingsGroup(AppIcons.Database, "Data and backup", "Excel, CSV and a full backup with photos", brushes.stock) { BackupSection(vm) }
+            }
+
+            item {
+                SettingsGroup(AppIcons.About, "About", "Version " + vm.c.updater.currentVersion, brushes.scan) {
+                    Text("Forget-it keeps your subscriptions, EMIs, bills and household stock on this phone.", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "The network is used only for the optional Gmail sync and for checking updates from github.com/${app.forgetit.update.UpdateController.REPO}.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
         }
     }
     if (timeDialog) TimeDialog(s.reminderMinuteOfDay, { vm.setReminderMinute(it); timeDialog = false }, { timeDialog = false })

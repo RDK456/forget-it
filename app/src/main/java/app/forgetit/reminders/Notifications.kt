@@ -22,6 +22,7 @@ object Notifications {
     const val CH_BILLS = "bills"
     const val CH_DIGEST = "digest"
     const val CH_FOUND = "found"
+    const val CH_UPDATE = "app_update"
 
     private val CHANNELS = listOf(
         Triple(CH_RENEWALS, "Renewals", NotificationManager.IMPORTANCE_DEFAULT),
@@ -32,6 +33,7 @@ object Notifications {
         Triple(CH_BILLS, "Bills and utilities", NotificationManager.IMPORTANCE_HIGH),
         Triple(CH_DIGEST, "Weekly summary", NotificationManager.IMPORTANCE_LOW),
         Triple(CH_FOUND, "New payments found", NotificationManager.IMPORTANCE_LOW),
+        Triple(CH_UPDATE, "App updates", NotificationManager.IMPORTANCE_LOW),
     )
 
     val channelIds get() = CHANNELS.map { it.first }
@@ -72,7 +74,7 @@ object Notifications {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val builder = NotificationCompat.Builder(context, channelFor(spec.kind))
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_forgetit)
             .setContentTitle(spec.title)
             .setContentText(spec.text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(spec.text))
@@ -97,7 +99,7 @@ object Notifications {
     )
 
     @SuppressLint("MissingPermission")
-    fun showInfo(context: Context, id: Int, title: String, text: String) {
+    fun showInfo(context: Context, id: Int, title: String, text: String, channel: String = CH_FOUND) {
         val nm = NotificationManagerCompat.from(context)
         if (!nm.areNotificationsEnabled()) return
         val open = PendingIntent.getActivity(
@@ -105,7 +107,7 @@ object Notifications {
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val n = NotificationCompat.Builder(context, CH_FOUND).setSmallIcon(R.drawable.ic_launcher)
+        val n = NotificationCompat.Builder(context, channel).setSmallIcon(R.drawable.ic_stat_forgetit)
             .setContentTitle(title).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(open).setAutoCancel(true).build()
         try { nm.notify(id, n) } catch (_: SecurityException) {}

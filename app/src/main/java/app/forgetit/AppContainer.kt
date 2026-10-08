@@ -55,6 +55,7 @@ class AppContainer(val context: Context) {
     val txns = TxnRepository(db.txnDao())
     val bills = BillRepository(db.billDao(), photos)
     val reminders by lazy { Reminders(this) }
+    val updater = app.forgetit.update.UpdateController(context, appScope)
 
     /** Called once from Application.onCreate: channels, housekeeping, the single sync collector, daily worker. */
     fun start() {
@@ -65,6 +66,7 @@ class AppContainer(val context: Context) {
             photos.deleteAll(OwnerType.SUBSCRIPTION, 0)
         }
         appScope.launch { app.forgetit.txn.AutoScan.scanDue(this@AppContainer) }
+        appScope.launch { if (settings.flow.first().autoUpdateCheck) updater.check() }
         appScope.launch { if (settings.flow.first().autoScan) app.forgetit.gmail.GmailScanner.sync(this@AppContainer) }
         // Every data or reminder-time change rebuilds alarms through this one path.
         appScope.launch {
