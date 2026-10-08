@@ -1,5 +1,6 @@
 package app.forgetit.ui.bills
 
+import app.forgetit.ui.relativeDayLower
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,7 +58,7 @@ fun BillDetailScreen(vm: MainViewModel, billId: Long, today: LocalDate, onBack: 
                         if (usual != null) AnimatedMoney(usual, cur, MaterialTheme.typography.headlineMedium)
                         else Text("No bills recorded yet", style = MaterialTheme.typography.titleMedium)
                         Text(
-                            (if (due.isBefore(today)) "Overdue since " else "Next due ") + relativeDay(due, today).lowercase() + " ($due)",
+                            (if (due.isBefore(today)) "Overdue since " else "Next due ") + relativeDayLower(due, today) + " ($due)",
                             color = if (due.isBefore(today)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                         )
                         if (lastChange != null && lastChange >= BillMath.HIGH_PERCENT) {

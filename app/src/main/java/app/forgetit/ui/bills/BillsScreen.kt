@@ -1,5 +1,6 @@
 package app.forgetit.ui.bills
 
+import app.forgetit.ui.relativeDayLower
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,7 +77,7 @@ fun BillsScreen(vm: MainViewModel, today: LocalDate, onAdd: () -> Unit, onOpen: 
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(b.name, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                if (due == null) "No due date" else (if (due.isBefore(today)) "Overdue - " else "Due ") + relativeDay(due, today).lowercase(),
+                                if (due == null) "No due date" else (if (due.isBefore(today)) "Overdue - " else "Due ") + relativeDayLower(due, today),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (due != null && due.isBefore(today)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             )

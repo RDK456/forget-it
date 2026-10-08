@@ -35,8 +35,18 @@ object BillMath {
     private fun isPaid(entries: List<BillEntry>, due: LocalDate) = entries.any { it.dueDate == due && it.paidOn != null }
 
     /** The due date still waiting for payment: the latest past one if unpaid, otherwise the next unpaid one. */
-    fun pendingDue(b: Bill, entries: List<BillEntry>, today: LocalDate): LocalDate? =
-        recentAndNext(b, today).firstOrNull { !isPaid(entries, it) }
+    fun pendingDue(b: Bill, entries: List<BillEntry>, today: LocalDate): LocalDate? {
+        val near = recentAndNext(b, today)
+        near.firstOrNull { !isPaid(entries, it) }?.let { return it }
+        // Every near date is paid (bills paid well in advance): keep walking forward to the first unpaid cycle.
+        val schedule = schedule(b)
+        var date = near.lastOrNull() ?: return null
+        repeat(60) {
+            date = Renewal.next(schedule, date.plusDays(1))
+            if (!isPaid(entries, date)) return date
+        }
+        return null
+    }
 
     fun average(entries: List<BillEntry>, n: Int = AVERAGE_OVER): Long? {
         val recent = entries.sortedByDescending { it.dueDate }.take(n)

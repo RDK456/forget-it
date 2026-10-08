@@ -51,3 +51,13 @@ class BillMathTest {
         assertNull(BillMath.monthlyEquivalentMinor(bill, emptyList()))
     }
 }
+
+class BillAheadTest {
+    private val bill = Bill(id = 1, name = "Power", currency = "USD", anchorDate = d("2026-10-15"))
+    private fun paid(due: String) = BillEntry(billId = 1, dueDate = d(due), amountMinor = 100, paidOn = d("2026-10-01"))
+
+    @Test fun keepsLookingPastCyclesThatArePaidInAdvance() {
+        val entries = listOf(paid("2026-10-15"), paid("2026-11-15"), paid("2026-12-15"))
+        assertEquals(d("2027-01-15"), BillMath.pendingDue(bill, entries, d("2026-10-08")))
+    }
+}

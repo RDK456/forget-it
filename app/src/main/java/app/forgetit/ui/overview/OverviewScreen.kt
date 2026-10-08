@@ -1,5 +1,6 @@
 package app.forgetit.ui.overview
 
+import app.forgetit.ui.relativeDayLower
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -143,7 +144,7 @@ fun OverviewScreen(vm: MainViewModel, today: LocalDate) {
     val mood = if (overdue != null) Mood.WORRIED else if (soon != null) Mood.ALERT else Mood.HAPPY
     val message = when {
         overdue != null -> "${overdue.title}: ${overdue.detail} - overdue."
-        soon != null -> "${soon.title} ${soon.detail.lowercase()} ${relativeDay(soon.date, today).lowercase()}."
+        soon != null -> "${soon.title} ${soon.detail.lowercase()} ${relativeDayLower(soon.date, today)}."
         else -> "All clear for the next $UPCOMING_DAYS days. Nice."
     }
     val hour = LocalTime.now().hour

@@ -1,5 +1,6 @@
 package app.forgetit.ui.stock
 
+import app.forgetit.ui.relativeDayLower
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -49,7 +50,7 @@ fun ShoppingCard(lines: List<ShoppingLine>, today: LocalDate, onBought: (Shoppin
                             Column(Modifier.weight(1f)) {
                                 Text("${l.name}  -  ${Money.milliToPlain(l.buyMilli)} ${l.unit}")
                                 Text(
-                                    l.reason + (l.buyBy?.let { "  -  buy by ${relativeDay(it, today).lowercase()}" } ?: ""),
+                                    l.reason + (l.buyBy?.let { "  -  buy by ${relativeDayLower(it, today)}" } ?: ""),
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
                                 )
                             }

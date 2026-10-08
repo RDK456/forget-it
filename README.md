@@ -1,6 +1,6 @@
 # Forget-it
 
-Offline Android app that tracks subscriptions, EMIs/loans and household stock (milk, groceries), with photos, reminders, a home-screen widget and optional SMS-based transaction detection. No account, no internet permission.
+Offline Android app that tracks subscriptions, EMIs/loans, bills and utilities, and household stock (milk, groceries), with photos, reminders (several per item, snooze, weekly summary), a home-screen widget and optional SMS-based transaction detection. No account, no internet permission.
 
 ## Build and run
 

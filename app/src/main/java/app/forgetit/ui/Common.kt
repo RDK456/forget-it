@@ -114,3 +114,9 @@ fun Modifier.pressScale(onClick: () -> Unit): Modifier = composed {
     this.graphicsLayer { scaleX = scale; scaleY = scale }
         .clickable(interactionSource = source, indication = LocalIndication.current, onClick = onClick)
 }
+
+/** Like [relativeDay] but lowercase for use inside a sentence; month names in far dates keep their capital. */
+fun relativeDayLower(date: LocalDate, today: LocalDate): String {
+    val s = relativeDay(date, today)
+    return if (s.startsWith("Today") || s.startsWith("Tomorrow") || s.startsWith("Yesterday") || s.startsWith("In ") || s.endsWith(" ago")) s.replaceFirstChar { it.lowercase() } else s
+}
